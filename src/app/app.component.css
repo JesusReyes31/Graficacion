@@ -1,0 +1,107 @@
+/* Estilos generales */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  /* Contenedor principal */
+  .container {
+    display: flex;
+    flex-direction: column;
+    height: 95vh;
+    background: #f5f5f5;
+  }
+  
+  /* Menú superior */
+  .top-menu {
+    border-radius: 10px;
+    background: #1abc9c;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    border-bottom: 3px solid #16a085;
+  }
+  
+  .top-menu ul {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    list-style: none;
+  }
+  
+  .top-menu ul li {
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: 0.3s;
+  }
+  
+  .top-menu ul li:hover {
+    background: #16a085;
+  }
+  
+  /* Contenedor de la barra lateral y el contenido */
+  .main-content {
+    display: flex;
+    flex-direction: row;
+    padding: 20px;
+    gap: 20px;
+  }
+  
+  /* Barra lateral */
+  .sidebar {
+    width: 250px;
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  
+  .sidebar h2 {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #1abc9c;
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .sidebar ul li {
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+    border-radius: 5px;
+  }
+  
+  .sidebar ul li:hover {
+    background: #1abc9c;
+    color: white;
+  }
+  
+  /* Contenido principal */
+  .content {
+    flex-grow: 1;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  h1 {
+    font-size: 24px;
+    color: #333;
+  }
+  
+  p {
+    font-size: 16px;
+    color: #666;
+  }
+  
