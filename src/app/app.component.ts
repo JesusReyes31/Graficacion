@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
 import { Router, RouterLink, RouterModule, RouterOutlet } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-root',
@@ -43,17 +44,44 @@ export class AppComponent {
 
   eliminarProyecto(index: number, event: Event) {
     event.stopPropagation();
-    const confirmar = confirm('¿Estás seguro de que quieres eliminar este proyecto?');
-    if (confirmar) {
-      this.proyectos.splice(index, 1);
-    }
+  
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'No podrás revertir esta acción',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.proyectos.splice(index, 1);
+        Swal.fire('Eliminado', 'El proyecto ha sido eliminado.', 'success');
+      }
+    });
   }
-
+  
   editarProyecto(index: number, event: Event) {
     event.stopPropagation();
-    const nuevoNombre = prompt('Nuevo nombre del proyecto:', this.proyectos[index]);
-    if (nuevoNombre !== null && nuevoNombre.trim()) {
-      this.proyectos[index] = nuevoNombre.trim();
-    }
+  
+    Swal.fire({
+      title: 'Editar proyecto',
+      input: 'text',
+      inputLabel: 'Nuevo nombre del proyecto:',
+      inputValue: this.proyectos[index],
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        if (!value.trim()) {
+          return 'El nombre no puede estar vacío';
+        }
+        return;
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.proyectos[index] = result.value.trim();
+        Swal.fire('Guardado', 'El nombre del proyecto ha sido actualizado.', 'success');
+      }
+    });
   }
 }
