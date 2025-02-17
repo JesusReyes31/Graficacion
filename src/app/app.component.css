@@ -3,7 +3,6 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
   }
   
   /* Contenedor principal */
@@ -52,7 +51,7 @@
   
   /* Barra lateral */
   .sidebar {
-    width: 250px;
+    width: 300px;
     background: #2c3e50;
     color: white;
     padding: 20px;
@@ -79,11 +78,13 @@
     cursor: pointer;
     transition: 0.3s;
     border-radius: 5px;
+    position: relative; /* Para posicionar las acciones */
   }
   
-  .sidebar ul li:hover {
-    background: #1abc9c;
-    color: white;
+  /* Cuando el cursor está sobre el proyecto, se muestran las acciones */
+  .sidebar ul li:hover .acciones {
+    visibility: visible;
+    opacity: 1; /* Hacer visible las acciones */
   }
   
   /* Contenido principal */
@@ -105,3 +106,148 @@
     color: #666;
   }
   
+  .acciones,.acciones i {
+    margin-left: 1rem;
+  }
+
+
+/* Estilo para ocultar las acciones por defecto */
+.acciones {
+  visibility: hidden; /* Ocultar las acciones */
+  opacity: 0; /* Hacer las acciones invisibles */
+  position: absolute; /* Posicionar las acciones fuera del flujo normal */
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 10px;
+  transition: visibility 0.3s, opacity 0.3s; /* Animar la visibilidad y la opacidad */
+}
+
+.acciones i {
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.acciones i:hover {
+  color: #1abc9c; /* Cambiar el color del icono cuando el mouse está sobre ellos */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between; /* Para separar el título y el botón */
+  align-items: center;
+  /* padding: 15px; */
+  /* border-bottom: 3px solid #16a085; */
+  /* background: #1abc9c; */
+  color: white;
+  border-radius: 10px;
+}
+
+.header h1 {
+  font-size: 24px;
+}
+
+.btn-generar {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #16a085;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s ease;
+}
+
+.btn-generar:hover {
+  background-color: #1abc9c;
+  transform: scale(1.05); /* Hacer el botón un poco más grande al pasar el cursor */
+}
+
+.btn-generar:active {
+  transform: scale(1); /* Devolver el tamaño al presionar */
+}
+
+/* Estilos para el botón cuando está deshabilitado */
+.btn-generar:disabled {
+  background-color: #bdc3c7;  /* Color gris más claro para mostrar que está inactivo */
+  color: #7f8c8d;  /* Color de texto más suave */
+  cursor: not-allowed;  /* Cursor indicando que no se puede hacer clic */
+  transform: none;  /* Desactiva la animación de escala */
+}
+
+/* También puedes aplicar un hover cuando el botón está deshabilitado (aunque no será interactivo) */
+.btn-generar:disabled:hover {
+  background-color: #bdc3c7;  /* Mismo color de fondo cuando se pasa el cursor */
+  transform: none;  /* Desactiva cualquier transformación al pasar el cursor */
+}
+
+/* Contenedor del input */
+.input-container {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+/* Estilos para el input de nuevo proyecto */
+.sidebar input[type="text"] {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 16px;
+  color: #333;
+  background-color: #ecf0f1;
+  border: 2px solid #bdc3c7;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* Estilos de foco para el input */
+.sidebar input[type="text"]:focus {
+  border-color: #1abc9c;
+  background-color: #fff;
+  box-shadow: 0 0 8px rgba(26, 188, 156, 0.5);
+}
+
+/* Placeholder más sutil */
+.sidebar input[type="text"]::placeholder {
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+/* Estilos para la X de cancelar */
+.cancel-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #e74c3c;
+  font-size: 18px;
+  background-color: transparent;
+  border: none;
+  padding: 5px;
+  transition: color 0.3s ease, transform 0.2s ease;
+  border-radius: 50%;
+}
+
+/* Efecto al pasar el cursor sobre la X */
+.cancel-icon:hover {
+  color: #c0392b;
+  transform: translateY(-50%) scale(1.2);
+  background-color: #f4f4f4;
+}
+
+/* Estilo del input cuando se está escribiendo */
+.sidebar input[type="text"]:valid {
+  border-color: #16a085;
+}
+
+/* Si el input tiene texto */
+.sidebar input[type="text"]:not(:placeholder-shown) {
+  background-color: #fff;
+  box-shadow: 0 0 5px rgba(22, 160, 133, 0.3);
+}

@@ -1,38 +1,53 @@
 <div class="container">
-  <!-- Menú superior -->
-  <!-- <header class="top-menu">
-    
-  </header> -->
-
   <div class="main-content">
     <!-- Barra lateral -->
     <nav class="sidebar">
       <h2>Proyectos UML</h2>
       <ul>
-        <li><i class="fas fa-project-diagram"></i> Proyecto 1</li>
-        <li><i class="fas fa-random"></i>Proyecto 2</li>
-        <li><i class="fas fa-boxes"></i> Proyecto 3</li>
-        <li><i class="fas fa-cogs"></i> Proyecto 4</li>
-        <li><i class="fas fa-layer-group"></i> Proyecto 5</li>
-        <li><i class="fas fa-layer-group"></i> Nuevo Proyecto</li>
+        <li *ngFor="let proyecto of proyectos; let i = index" (click)="seleccionarProyecto(proyecto)">
+          <i class="fas fa-project-diagram"></i> 
+          <span>{{ proyecto }}</span>
+          <div class="acciones">
+            <i class="fas fa-edit" (click)="editarProyecto(i, $event)"></i>
+            <i class="fas fa-trash" (click)="eliminarProyecto(i, $event)"></i>
+          </div>
+        </li>
+        @if(creandoProyecto){
+          <li class="input-container">
+            <input type="text" [(ngModel)]="nuevoProyecto" (keyup.enter)="agregarProyecto()"
+              placeholder="Nombre del proyecto" (blur)="cancelarNuevoProyecto()" autofocus>
+            <i class="fas fa-times cancel-icon" (click)="cancelarNuevoProyecto()"></i>
+          </li>
+        }@else{
+          <li (click)="activarInput()">
+            <i class="fas fa-layer-group"></i> Nuevo Proyecto
+          </li>
+        }
       </ul>
     </nav>
 
     <!-- Contenido principal -->
     <main class="content">
-      <h1>Bienvenido a la Creación de Diagramas UML</h1>
+      <div class="header">
+        <h1>Bienvenido a la Creación de Diagramas UML</h1>
+        <button class="btn-generar" [disabled]="isButtonDisabled" >Generar</button>
+      </div>
       <p>Selecciona un artefacto UML para comenzar.</p>
       <br>
-      <section class="top-menu">
-        <ul>
-      
-          <li>Casos de Uso</li>
-          <li>Diagramas de Secuencia</li>
-          <li>Diagramas de Paquetes</li>
-          <li>Diagramas de Componentes</li>
-          <li>Diagramas de Clases</li>
-        </ul>
-      </section>
+
+      <!-- Menú de artefactos UML (solo visible si hay un proyecto seleccionado) -->
+      @if(proyectoSeleccionado){
+        <section class="top-menu">
+          <ul>
+            <li [routerLink]="'/cu'">Casos de Uso</li>
+            <li [routerLink]="'/secuencia'">Diagramas de Secuencia</li>
+            <li [routerLink]="'/paquetes'">Diagramas de Paquetes</li>
+            <li [routerLink]="'/componentes'">Diagramas de Componentes</li>
+            <li [routerLink]="'/clases'">Diagramas de Clases</li>
+          </ul>
+        </section>
+      }
+
       <router-outlet></router-outlet>
     </main>
   </div>

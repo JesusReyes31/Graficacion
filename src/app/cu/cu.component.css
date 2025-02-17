@@ -1,0 +1,11 @@
+#myDiagramDiv {
+    border: 1px solid black;
+    background-color: #f4f4f4;
+  }
+  
+  #paletteDiv {
+    border: 1px solid black;
+    background-color: #f4f4f4;
+    overflow: hidden;
+  }
+  
