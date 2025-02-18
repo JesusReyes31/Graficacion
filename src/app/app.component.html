@@ -32,6 +32,9 @@
         <h1>Bienvenido a la Creación de Diagramas UML</h1>
         <button class="btn-generar" [disabled]="isButtonDisabled" >Generar</button>
       </div>
+      @if(proyectoSeleccionado){
+        <h2>{{proyectoSeleccionado}}</h2>
+      }
       <p>Selecciona un artefacto UML para comenzar.</p>
       <br>
 

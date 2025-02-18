@@ -40,67 +40,67 @@ export class CUComponent {
     );
 
 
-     // Crear la paleta lateral
-    const palette = $(go.Palette, "paletteDiv", {
-      nodeTemplate:
-        $(go.Node, "Auto",
-          $(go.Shape, "Ellipse", { width: 100, height: 100, fill: "lightblue" }),
-          $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-        ),
-    });
+    //  // Crear la paleta lateral
+    // const palette = $(go.Palette, "paletteDiv", {
+    //   nodeTemplate:
+    //     $(go.Node, "Auto",
+    //       $(go.Shape, "Ellipse", { width: 100, height: 100, fill: "lightblue" }),
+    //       $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
+    //     ),
+    // });
 
-    // Modelo de la paleta
-    palette.model = new go.GraphLinksModel([
-      { key: "Circle", shape: "Ellipse", fill: "lightblue", width: 100, height: 100 }, // Círculo
-      { key: "Square", shape: "Rectangle", fill: "lightgreen", width: 80, height: 80 }, // Cuadrado
-      { key: "Rectangle", shape: "Rectangle", fill: "lightyellow", width: 100, height: 50 }, // Rectángulo
-      { key: "Oval", shape: "Ellipse", fill: "lightcoral", width: 120, height: 60 }, // Óvalo
-      { key: "Arrow", shape: "Arrow", fill: "lightblue", width: 120, height: 40 }, // Flecha
-    ]);
+    // // Modelo de la paleta
+    // palette.model = new go.GraphLinksModel([
+    //   { key: "Circle", shape: "Ellipse", fill: "lightblue", width: 100, height: 100 }, // Círculo
+    //   { key: "Square", shape: "Rectangle", fill: "lightgreen", width: 80, height: 80 }, // Cuadrado
+    //   { key: "Rectangle", shape: "Rectangle", fill: "lightyellow", width: 100, height: 50 }, // Rectángulo
+    //   { key: "Oval", shape: "Ellipse", fill: "lightcoral", width: 120, height: 60 }, // Óvalo
+    //   { key: "Arrow", shape: "Arrow", fill: "lightblue", width: 120, height: 40 }, // Flecha
+    // ]);
 
-    // Asignar diferentes formas a los nodos en la paleta
-    palette.nodeTemplateMap.add("Circle",  
-      $(go.Node, "Auto",
-        $(go.Shape, "Ellipse", { width: 100, height: 100, fill: "lightblue" }),
-        $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-      )
-    );
+    // // Asignar diferentes formas a los nodos en la paleta
+    // palette.nodeTemplateMap.add("Circle",  
+    //   $(go.Node, "Auto",
+    //     $(go.Shape, "Ellipse", { width: 100, height: 100, fill: "lightblue" }),
+    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
+    //   )
+    // );
 
-    palette.nodeTemplateMap.add("Square",  
-      $(go.Node, "Auto",
-        $(go.Shape, "Rectangle", { width: 80, height: 80, fill: "lightgreen" }),
-        $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-      )
-    );
+    // palette.nodeTemplateMap.add("Square",  
+    //   $(go.Node, "Auto",
+    //     $(go.Shape, "Rectangle", { width: 80, height: 80, fill: "lightgreen" }),
+    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
+    //   )
+    // );
 
-    palette.nodeTemplateMap.add("Rectangle",  
-      $(go.Node, "Auto",
-        $(go.Shape, "Rectangle", { width: 100, height: 50, fill: "lightyellow" }),
-        $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-      )
-    );
+    // palette.nodeTemplateMap.add("Rectangle",  
+    //   $(go.Node, "Auto",
+    //     $(go.Shape, "Rectangle", { width: 100, height: 50, fill: "lightyellow" }),
+    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
+    //   )
+    // );
 
-    palette.nodeTemplateMap.add("Oval",  
-      $(go.Node, "Auto",
-        $(go.Shape, "Ellipse", { width: 120, height: 60, fill: "lightcoral" }),
-        $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-      )
-    );
+    // palette.nodeTemplateMap.add("Oval",  
+    //   $(go.Node, "Auto",
+    //     $(go.Shape, "Ellipse", { width: 120, height: 60, fill: "lightcoral" }),
+    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
+    //   )
+    // );
 
-    palette.nodeTemplateMap.add("Arrow",  
-      $(go.Node, "Auto",
-        $(go.Shape, "Arrow", { width: 120, height: 40, fill: "lightblue" }),
-        $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-      )
-    );
-    // Asignar el modelo de datos a la paleta
-    palette.model = new go.GraphLinksModel([
-      { key: "Circle" }, 
-      { key: "Square" }, 
-      { key: "Rectangle" }, 
-      { key: "Oval" },
-      { key: "Arrow" }
-    ]);
+    // palette.nodeTemplateMap.add("Arrow",  
+    //   $(go.Node, "Auto",
+    //     $(go.Shape, "Arrow", { width: 120, height: 40, fill: "lightblue" }),
+    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
+    //   )
+    // );
+    // // Asignar el modelo de datos a la paleta
+    // palette.model = new go.GraphLinksModel([
+    //   { key: "Circle" }, 
+    //   { key: "Square" }, 
+    //   { key: "Rectangle" }, 
+    //   { key: "Oval" },
+    //   { key: "Arrow" }
+    // ]);
 
     // Habilitar la paleta para que los usuarios puedan arrastrar formas a la zona del diagrama
     // diagram.toolManager.linkingTool.isEnabled = false;  // Deshabilitar herramientas de enlace (si no las necesitas)

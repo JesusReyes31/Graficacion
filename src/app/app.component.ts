@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
 import { Router, RouterLink, RouterModule, RouterOutlet } from '@angular/router';
 import Swal from 'sweetalert2';
@@ -21,8 +21,23 @@ export class AppComponent {
 
   constructor(private router:Router){}
 
+  ngOnInit(){
+    if(localStorage.getItem('proyecto')){
+      this.proyectoSeleccionado = localStorage.getItem('proyecto');
+    }
+    localStorage.clear();
+  }
+  
+  // @HostListener('window:beforeunload')
+  recarga(){
+    if(this.proyectoSeleccionado){
+      localStorage.setItem('proyecto',this.proyectoSeleccionado);
+    }
+  }
+
   seleccionarProyecto(proyecto: string) {
     this.proyectoSeleccionado = proyecto;
+    localStorage.setItem('proyecto',proyecto)
   }
 
   activarInput() {
