@@ -22,22 +22,23 @@ export class AppComponent {
   constructor(private router:Router){}
 
   ngOnInit(){
-    if(localStorage.getItem('proyecto')){
-      this.proyectoSeleccionado = localStorage.getItem('proyecto');
+    if(sessionStorage.getItem('proyecto')){
+      this.proyectoSeleccionado = sessionStorage.getItem('proyecto');
     }
-    localStorage.clear();
+    // sessionStorage.removeItem('proyecto');
   }
   
-  // @HostListener('window:beforeunload')
-  recarga(){
-    if(this.proyectoSeleccionado){
-      localStorage.setItem('proyecto',this.proyectoSeleccionado);
+  @HostListener('window:beforeunload')
+  recarga(): void {
+    console.log(this.proyectoSeleccionado);
+    if (this.proyectoSeleccionado) {
+      sessionStorage.setItem('proyecto',this.proyectoSeleccionado)
     }
   }
 
   seleccionarProyecto(proyecto: string) {
     this.proyectoSeleccionado = proyecto;
-    localStorage.setItem('proyecto',proyecto)
+    sessionStorage.setItem('proyecto',proyecto)
   }
 
   activarInput() {
