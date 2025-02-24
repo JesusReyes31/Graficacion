@@ -1,1 +1,12 @@
-<p>paquetes works!</p>
+<div>
+    <button (click)="addPackage()">➕ Agregar Paquete</button>
+    <button (click)="addSubPackage()">➕ Agregar Subpaquete</button>
+    <button (click)="deleteSelected()">🗑️ Eliminar Paquete</button>
+    <!-- <button (click)="renamePackage()">✏️ Renombrar Paquete</button> -->
+    <button (click)="createRelationship()">🔗 Crear Relación</button>
+    <button (click)="deleteRelationship()">❌ Eliminar Relación</button>
+    <button (click)="saveDiagram()">💾 Guardar</button>
+    <button (click)="loadDiagram()">📂 Cargar</button>
+  </div>
+  <div id="myDiagramDiv" style="width:100%; height:500px; border:1px solid black;"></div>
+  
