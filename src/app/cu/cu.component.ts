@@ -1,4 +1,5 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
 import * as go from 'gojs';
 
 @Component({
@@ -10,8 +11,10 @@ import * as go from 'gojs';
 export class CUComponent {
   @ViewChild('paletteDiv', { static: true }) paletteDiv!: ElementRef;
   @ViewChild('diagramDiv', { static: true }) diagramDiv!: ElementRef;
-
+  public relationshipMode: boolean = false; 
   diagram!: go.Diagram;
+
+  constructor(private toastr:ToastrService){}
 
   ngAfterViewInit() {
     this.initDiagram();
@@ -22,27 +25,46 @@ export class CUComponent {
   initDiagram() {
     const $ = go.GraphObject.make;
     this.diagram = $(go.Diagram, this.diagramDiv.nativeElement, {
+      initialContentAlignment: go.Spot.Center,
       'undoManager.isEnabled': true,
       'draggingTool.dragsLink': true,
-      'linkingTool.isEnabled': true,
+      'linkingTool.isEnabled': false,
       'linkingTool.direction':go.LinkingTool.ForwardsOnly,
-      'animationManager.isEnabled': true
+      'animationManager.isEnabled': true,
+      "draggingTool.isGridSnapEnabled": true,
     });
 
     this.diagram.nodeTemplateMap = this.getNodeTemplateMap();
+    this.diagram.groupTemplate = this.getGroupTemplate();
     this.diagram.linkTemplate = this.getLinkTemplate();
 
     this.diagram.model = new go.GraphLinksModel({
-      linkKeyProperty: "key", // Necesario para gestionar enlaces únicos
+      linkKeyProperty: "key",
+    });
+
+    this.diagram.addDiagramListener('LinkDrawn', (e) => {
+      this.relationshipMode = false;
+      this.diagram.toolManager.linkingTool.isEnabled = false;
     });
 
     // Evento para activar edición después de arrastrar un actor desde la paleta
     this.diagram.addDiagramListener('ExternalObjectsDropped', (e) => {
+      let CU = false;
+      e.subject.each((part: go.Node) => {
+        if (part instanceof go.Node && part.category === "usecase" && part.containingGroup === null) {
+          alert("Los casos de uso deben colocarse dentro de un área.");
+          // Remueve el nodo si no se encuentra dentro de un grupo (área)
+          this.diagram.remove(part);
+          CU = true
+        }
+      });
       e.subject.each((part: go.Part) => {
         if (part.category === 'actor') {
           this.diagram.commandHandler.editTextBlock(<go.TextBlock>part.findObject('ACTOR_LABEL'));
         } else if (part.category === 'usecase') {
-          this.diagram.commandHandler.editTextBlock(<go.TextBlock>part.findObject('CULabel'));
+          if(!CU){
+            this.diagram.commandHandler.editTextBlock(<go.TextBlock>part.findObject('CULabel'));
+          }
         }
       });
     });    
@@ -56,117 +78,170 @@ export class CUComponent {
 
   initPalette() {
     const $ = go.GraphObject.make;
+    
+    // Crear una plantilla específica para el área en la paleta
+    const areaPaletteTemplate = $(go.Group, "Auto",
+      {
+        background: "transparent",
+        layerName: "Background",
+        computesBoundsAfterDrag: true,
+        mouseDragEnter: null,
+        mouseDragLeave: null,
+        mouseDrop: null,
+        alignment: go.Spot.Center, // Alinea al centro
+      },
+      $(go.Shape, "Rectangle", {
+        fill: "white",
+        stroke: "black",
+        strokeWidth: 2,
+        minSize: new go.Size(100, 100)
+      }),
+      $(go.Panel, "Vertical", 
+        {
+          alignment: go.Spot.Center, // Alinea los elementos en el panel al centro
+          margin: new go.Margin(0, 0, 0, 0), // Elimina márgenes si es necesario
+        },
+        $(go.TextBlock, 
+          {
+            alignment: go.Spot.Center, // Alinea el texto al centro
+            margin: 8,
+            editable: true,
+            font: "bold 12pt sans-serif"
+          },
+          new go.Binding("text", "nombre").makeTwoWay()),
+        $(go.Placeholder, { padding: 5, background: "transparent" })
+      )
+    );
+  
     const palette = $(go.Palette, this.paletteDiv.nativeElement, {
       nodeTemplateMap: this.getNodeTemplateMap(),
+      initialContentAlignment: go.Spot.Center,
+      contentAlignment: go.Spot.Center,
+      groupTemplateMap: new go.Map<string, go.Group>().add("area", areaPaletteTemplate),
       model: new go.GraphLinksModel([
-        { category: 'actor', text: 'Actor' },
+        { category: 'actor', text: 'Actor' }, 
         { category: 'usecase', text: 'Caso de Uso' },
-        {category:'area'}
+        { category: 'area', isGroup: true }
       ])
     });
   }
+  
 
   getNodeTemplateMap(): go.Map<string, go.Node> {
     const $ = go.GraphObject.make;
-    const map = new go.Map<string, go.Node>();
-
-    map.set('actor',
-      $(go.Node, 'Vertical',
-        { locationSpot: go.Spot.Center, movable: true, deletable: true, fromLinkable:true,toLinkable:true },
-        new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
-        // Cabeza
-        $(go.Shape, 'Circle', { width: 30, height: 30, fill: 'white', stroke: 'black' }),
-    
-        // Panel para el cuerpo y los brazos
-        $(go.Panel, 'Vertical',
-          $(go.Panel, 'Horizontal', // Brazos alineados con el cuerpo
-            $(go.Shape, { geometryString: "M0 0 L-15 0", stroke: "black", strokeWidth: 2 }), // Brazo izquierdo
-            $(go.Shape, { geometryString: "M0 0 L0 30", stroke: "black", strokeWidth: 2 }),  // Cuerpo
-            $(go.Shape, { geometryString: "M0 0 L15 0", stroke: "black", strokeWidth: 2 }),  // Brazo derecho
-          )
-        ),    
-        // Piernas (Dos líneas diagonales)
+    const actorNode = $(go.Node, 'Vertical',
+      { locationSpot: go.Spot.Center, movable: true, deletable: true, fromLinkable: true, toLinkable: true, width: 100 },
+      new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+      $(go.Shape, 'Circle', { width: 25, height: 25, fill: 'lightgray', stroke: 'black', strokeWidth: 2 }),
+      $(go.Panel, 'Vertical',
         $(go.Panel, 'Horizontal',
-          $(go.Shape, { geometryString: "M0 0 L-10 15", stroke: "black", strokeWidth: 2 }), // Pierna izquierda
-          $(go.Shape, { geometryString: "M0 0 L10 15", stroke: "black", strokeWidth: 2 })  // Pierna derecha
-        ),
-        // Etiqueta del Actor (Texto editable)
-        $(go.TextBlock,
-          { 
-            name: 'ACTOR_LABEL',  // Para identificarlo y activarlo con código
-            margin: 5, 
-            editable: true, 
-            font: "bold 12pt sans-serif" 
-          },
-          new go.Binding("text").makeTwoWay()
+          $(go.Shape, { geometryString: "M0 0 L-20 0", stroke: "black", strokeWidth: 2 }),
+          $(go.Shape, { geometryString: "M0 0 L0 25", stroke: "black", strokeWidth: 2 }),
+          $(go.Shape, { geometryString: "M0 0 L20 0", stroke: "black", strokeWidth: 2 })
         )
+      ),
+      $(go.Panel, 'Horizontal',
+        $(go.Shape, { geometryString: "M0 0 L-10 20", stroke: "black", strokeWidth: 2 }),
+        $(go.Shape, { geometryString: "M0 0 L10 20", stroke: "black", strokeWidth: 2 })
+      ),
+      $(go.TextBlock, { name: 'ACTOR_LABEL', margin: 5, editable: true, font: "bold 14pt sans-serif", textAlign: "center" },
+        new go.Binding("text").makeTwoWay()
       )
     );
-    
-    
-
-    // **Caso de Uso (Óvalo)**
-    map.set('usecase',
-      $(go.Node, 'Auto',
-        { locationSpot: go.Spot.Center, movable: true, deletable: true, toLinkable:true, fromLinkable: false,resizable:true,minSize: new go.Size(50, 30)},
-        new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
-        new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify),
-        $(go.Shape, 'Ellipse', 
-          { fill: 'lightblue', stroke: 'black' } // ❌ Quitamos `width` y `height`
-        ),
-        $(go.TextBlock, 
-          {
-            name: "CULabel",
-            margin: 5,  // Espacio alrededor del texto
-            editable: true,
-            font: "bold 12pt sans-serif",
-            wrap: go.TextBlock.WrapFit, // 🔥 Permite saltos de línea automáticos
-            textAlign: "center",  // Centrar texto
-            desiredSize:new go.Size(100,NaN)
-          },
-          new go.Binding('text').makeTwoWay()
-        )
+  
+    const usecaseNode = $(go.Node, 'Auto',
+      { 
+        locationSpot: go.Spot.Center, 
+        movable: true, 
+        deletable: true, 
+        toLinkable: true, 
+        fromLinkable: false,
+        resizable: true, 
+        minSize: new go.Size(50, 30),
+      },
+      new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+      new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify),
+      $(go.Shape, 'Ellipse', { fill: 'lightblue', stroke: 'black' }),
+      $(go.TextBlock, {
+        name: "CULabel",
+        margin: 5,
+        editable: true,
+        font: "bold 12pt sans-serif",
+        wrap: go.TextBlock.WrapFit,
+        textAlign: "center",
+        desiredSize: new go.Size(100, NaN)
+      },
+      new go.Binding('text').makeTwoWay()
       )
     );
-    
-
-    map.set('area',
-      $(go.Node, 'Auto',
-        {
-          layerName:"Background",
-          resizable: true, // Permite redimensionar
-          resizeObjectName: "SHAPE", // Define qué objeto se redimensiona
-          locationSpot: go.Spot.Center, // Ajusta el punto de referencia
-          deletable: true, // Se puede eliminar
-          movable: true, // Se puede mover  
-        },
-        new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
-        new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify),
-        $(go.Shape, 'Rectangle', 
-          {
-            name: "SHAPE", // Identificador para redimensionar
-            width: 150, 
-            height: 100, 
-            fill: 'transparent', 
-            stroke: 'black', 
-            strokeWidth: 2,
-            stretch: go.GraphObject.Fill
-          },
-          new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify),
-          // new go.Binding("width", "size", s => s.width),
-          // new go.Binding("height", "size", s => s.height),
-        ), 
-      )
-    );
-
+  
+    // Crear el mapa solo con las definiciones de nodos (sin el grupo)
+    const map = new go.Map<string, go.Node>();
+    map.set('actor', actorNode);
+    map.set('usecase', usecaseNode);
+  
     return map;
   }
+  
+
+  getGroupTemplate(): go.Group {
+    const $ = go.GraphObject.make;
+    return $(go.Group, "Auto",
+      {
+        isSubGraphExpanded: true,
+        movable: true,
+        handlesDragDropForMembers: true,
+        computesBoundsAfterDrag: true,
+        memberValidation: (group: any, node: any) => node.category === "usecase",
+        mouseDrop: function(e, grp) {
+          const diagram = grp.diagram;
+          const tool = diagram!.currentTool as any;
+          if (!tool.doingDragSelecting) {
+            e.handled = true;
+            const group = grp as go.Group;
+            const groupKey = group.data.key;
+            diagram!.model.startTransaction("grouping");
+            diagram!.selection.each((part: go.Part) => {
+              if (part instanceof go.Node && part.category === "usecase") {
+                diagram!.model.setDataProperty(part.data, "group", groupKey);
+              }
+            });
+            diagram!.model.commitTransaction("grouping");
+          }
+        }
+      },
+      $(go.Shape, "Rectangle",
+        {
+          name: "SHAPE",
+          fill: "white",
+          stroke: "black",
+          strokeWidth: 2,
+          minSize: new go.Size(200, 200)
+        },
+        new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify)
+      ),
+      $(go.Panel, "Vertical",
+        $(go.TextBlock,
+          {
+            alignment: go.Spot.Top,
+            margin: 8,
+            editable: true,
+            font: "bold 12pt sans-serif"
+          },
+          new go.Binding("text", "nombre").makeTwoWay()),
+        $(go.Placeholder,
+           { padding: 5, background: "transparent" }
+        )
+      )
+    );
+  }
+
   getLinkTemplate(): go.Link {
     const $ = go.GraphObject.make;
     return $(go.Link,
-      { routing: go.Link.Orthogonal, curve: go.Link.JumpOver, reshapable: true }, // 🔹 Línea recta con efecto de "saltar" sobre otras líneas
-      $(go.Shape, { stroke: "black", strokeWidth: 2 }), // 🔹 Línea de conexión
-      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black", fill: "white" }) // 🔹 Flecha al final
+      { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver, corner: 5, relinkableFrom:true, relinkableTo:true, selectable:true,toShortLength:4,fromShortLength:4 }, // 🔹 Línea recta con efecto de "saltar" sobre otras líneas
+      $(go.Shape, { stroke: "gray", strokeWidth: 2, strokeDashArray: [4,2] }), // 🔹 Línea de conexión
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "gray", fill: "white" ,strokeWidth:3}) // 🔹 Flecha al final
     );
   }
 
@@ -177,6 +252,12 @@ export class CUComponent {
       localStorage.setItem("umlDiagram", json);
       // console.log("Diagrama guardado:", json);
     }
+  }
+
+  // Alterna el modo de creación de relaciones
+  toggleRelationshipMode(): void {
+    this.relationshipMode = !this.relationshipMode;
+    this.diagram.toolManager.linkingTool.isEnabled = this.relationshipMode;
   }
 
   loadDiagram() {
@@ -194,125 +275,6 @@ export class CUComponent {
           this.saveDiagram();
         }
       });
-  
-      // console.log("Diagrama cargado correctamente");
     }
   }
-  
-
-  // constructor() { }
-
-  // ngOnInit(): void {
-  //   this.initializeDiagram();
-  // }
-
-  // private initializeDiagram(): void {
-  //   const $ = go.GraphObject.make;
-
-  //   const diagram = $(go.Diagram, "myDiagramDiv", {
-  //     "undoManager.isEnabled": true, // Habilitar deshacer
-  //   });
-    
-  //   // Crear el modelo del diagrama con nodos y enlaces
-  //   diagram.nodeTemplate =
-  //   $(go.Node, "Auto",
-  //     $(go.Shape, "Ellipse", { width: 100, height: 100, fill: "lightblue" }),
-  //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-  //   );
-
-  //   diagram.linkTemplate =
-  //     $(go.Link, { routing: go.Link.Orthogonal, corner: 10 },
-  //       $(go.Shape, { strokeWidth: 3, stroke: "#f8c300" }), // Flecha
-  //       $(go.Shape, { toArrow: "Standard", stroke: "#f8c300", fill: "#f8c300" })  // Flecha al final
-  //     );
-
-  //   diagram.model = new go.GraphLinksModel(
-  //     [{ key: "Node1" }, { key: "Node2" }],
-  //     [{ from: 0, to: 1 }]
-  //   );
-
-
-    //  // Crear la paleta lateral
-    // const palette = $(go.Palette, "paletteDiv", {
-    //   nodeTemplate:
-    //     $(go.Node, "Auto",
-    //       $(go.Shape, "Ellipse", { width: 100, height: 100, fill: "lightblue" }),
-    //       $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-    //     ),
-    // });
-
-    // // Modelo de la paleta
-    // palette.model = new go.GraphLinksModel([
-    //   { key: "Circle", shape: "Ellipse", fill: "lightblue", width: 100, height: 100 }, // Círculo
-    //   { key: "Square", shape: "Rectangle", fill: "lightgreen", width: 80, height: 80 }, // Cuadrado
-    //   { key: "Rectangle", shape: "Rectangle", fill: "lightyellow", width: 100, height: 50 }, // Rectángulo
-    //   { key: "Oval", shape: "Ellipse", fill: "lightcoral", width: 120, height: 60 }, // Óvalo
-    //   { key: "Arrow", shape: "Arrow", fill: "lightblue", width: 120, height: 40 }, // Flecha
-    // ]);
-
-    // // Asignar diferentes formas a los nodos en la paleta
-    // palette.nodeTemplateMap.add("Circle",  
-    //   $(go.Node, "Auto",
-    //     $(go.Shape, "Ellipse", { width: 100, height: 100, fill: "lightblue" }),
-    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-    //   )
-    // );
-
-    // palette.nodeTemplateMap.add("Square",  
-    //   $(go.Node, "Auto",
-    //     $(go.Shape, "Rectangle", { width: 80, height: 80, fill: "lightgreen" }),
-    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-    //   )
-    // );
-
-    // palette.nodeTemplateMap.add("Rectangle",  
-    //   $(go.Node, "Auto",
-    //     $(go.Shape, "Rectangle", { width: 100, height: 50, fill: "lightyellow" }),
-    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-    //   )
-    // );
-
-    // palette.nodeTemplateMap.add("Oval",  
-    //   $(go.Node, "Auto",
-    //     $(go.Shape, "Ellipse", { width: 120, height: 60, fill: "lightcoral" }),
-    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-    //   )
-    // );
-
-    // palette.nodeTemplateMap.add("Arrow",  
-    //   $(go.Node, "Auto",
-    //     $(go.Shape, "Arrow", { width: 120, height: 40, fill: "lightblue" }),
-    //     $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
-    //   )
-    // );
-    // // Asignar el modelo de datos a la paleta
-    // palette.model = new go.GraphLinksModel([
-    //   { key: "Circle" }, 
-    //   { key: "Square" }, 
-    //   { key: "Rectangle" }, 
-    //   { key: "Oval" },
-    //   { key: "Arrow" }
-    // ]);
-
-    // Habilitar la paleta para que los usuarios puedan arrastrar formas a la zona del diagrama
-    // diagram.toolManager.linkingTool.isEnabled = false;  // Deshabilitar herramientas de enlace (si no las necesitas)
-    // diagram.toolManager.relinkingTool.isEnabled = false; // Deshabilitar herramientas de reconexión de enlaces
-
-    // // Modelo de datos: actores y casos de uso
-    // diagram.model = new go.GraphLinksModel(
-    //   // Nodos (actores y casos de uso)
-    //   [
-    //     { key: 1, text: "Actor 1", category: "actor" },
-    //     { key: 2, text: "Actor 2", category: "actor" },
-    //     { key: 3, text: "Login", category: "useCase" },
-    //     { key: 4, text: "Register", category: "useCase" },
-    //     { key: 5, text: "Search", category: "useCase" }
-    //   ],
-    //   // Enlaces (relaciones entre actores y casos de uso)
-    //   [
-    //     { from: 1, to: 2 },
-
-    //   ]
-    // );
-  // }
 }

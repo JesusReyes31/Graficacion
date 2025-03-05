@@ -1,5 +1,12 @@
 <div style="display: flex; gap: 20px;">
+  <div class="uml-palette-container">
     <div #paletteDiv style="width: 200px; height: 500px; border: 1px solid black;"></div>
-    <div #diagramDiv style="flex-grow: 1; height: 500px; border: 1px solid black;"></div>
+    <div class="toolbar">
+      <button (click)="toggleRelationshipMode()">
+        {{ relationshipMode ? 'Salir Modo Relación' : 'Modo Relación' }}
+      </button>
+    </div>
   </div>
+  <div #diagramDiv style="flex-grow: 1; height: 500px; border: 1px solid black;"></div>
+</div>
   
