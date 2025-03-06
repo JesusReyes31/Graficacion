@@ -18,6 +18,7 @@ export class AppComponent {
   creandoProyecto: boolean = false;
   nuevoProyecto: string = '';
   isButtonDisabled = true;
+  showComponent = true
 
   constructor(private router:Router){}
 
@@ -39,6 +40,10 @@ export class AppComponent {
   seleccionarProyecto(proyecto: string) {
     this.proyectoSeleccionado = proyecto;
     sessionStorage.setItem('proyecto',proyecto)
+    this.showComponent = false; // Elimina el componente
+    setTimeout(() => {
+      this.showComponent = true; // Lo vuelve a crear después de un breve retraso
+    }, 100);
   }
 
   activarInput() {

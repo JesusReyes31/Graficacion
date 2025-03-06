@@ -30,12 +30,14 @@
     <main class="content">
       <div class="header">
         <h1>Bienvenido a la Creación de Diagramas UML</h1>
-        <button class="btn-generar" [disabled]="isButtonDisabled" >Generar</button>
+        @if(proyectoSeleccionado){
+          <button class="btn-generar" [disabled]="isButtonDisabled" >Generar</button>
+        }
       </div>
       @if(proyectoSeleccionado){
         <h2>{{proyectoSeleccionado}}</h2>
+        <p>Selecciona un artefacto UML para comenzar.</p>
       }
-      <p>Selecciona un artefacto UML para comenzar.</p>
       <br>
 
       <!-- Menú de artefactos UML (solo visible si hay un proyecto seleccionado) -->
@@ -50,8 +52,9 @@
           </ul>
         </section>
       }
-
-      <router-outlet></router-outlet>
+      @if(showComponent){
+        <router-outlet></router-outlet>
+      }
     </main>
   </div>
 </div>
