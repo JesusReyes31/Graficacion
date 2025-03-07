@@ -1,0 +1,270 @@
+.secuencia-container {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    height: calc(100vh - 40px);
+    background-color: #FAFAFA;
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  
+  .panel-control {
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .diagrama-preview {
+    flex: 1;
+    border-radius: 8px;
+    padding: 20px;
+    background-color: white;
+    min-width: 600px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .diagram-container {
+    width: 100%;
+    height: calc(100vh - 140px);
+    border-radius: 4px;
+    background-color: white;
+    overflow: auto;
+    background-image: 
+      linear-gradient(rgba(33, 150, 243, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(33, 150, 243, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  
+  .participantes-section,
+  .mensajes-section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .nuevo-participante,
+  .nuevo-mensaje {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background-color: #F5F5F5;
+    padding: 15px;
+    border-radius: 6px;
+  }
+  
+  .lista-participantes,
+  .lista-mensajes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+  
+  .lista-participantes::-webkit-scrollbar,
+  .lista-mensajes::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .lista-participantes::-webkit-scrollbar-thumb,
+  .lista-mensajes::-webkit-scrollbar-thumb {
+    background-color: #90CAF9;
+    border-radius: 3px;
+  }
+  
+  .participante-item,
+  .mensaje-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #E3F2FD;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+  }
+  
+  .participante-item:hover,
+  .mensaje-item:hover {
+    background-color: #BBDEFB;
+  }
+  
+  .btn-eliminar {
+    background-color: #EF5350;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-eliminar:hover {
+    background-color: #E53935;
+  }
+  
+  button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  button:hover {
+    background-color: #1976D2;
+    transform: translateY(-1px);
+  }
+  
+  button:disabled {
+    background-color: #90CAF9;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  input, select {
+    padding: 10px;
+    border: 2px solid #E0E0E0;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+  }
+  
+  input:focus, select:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+  }
+  
+  h3 {
+    margin: 0;
+    color: #1976D2;
+    font-size: 16px;
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #E3F2FD;
+  }
+  
+  .actor, .objeto, .componente {
+    padding: 1rem;
+    border: 2px solid #333;
+    border-radius: 4px;
+    min-width: 100px;
+    text-align: center;
+  }
+  
+  .linea-vida {
+    height: 300px;
+    border-left: 2px dashed #333;
+    margin-top: 1rem;
+  }
+  
+  .mensaje-linea {
+    position: absolute;
+    height: 2px;
+    background-color: #333;
+    margin: 2rem 0;
+  }
+  
+  .mensaje-linea.sincrono::after {
+    content: '>';
+    position: absolute;
+    right: -10px;
+    top: -8px;
+    font-size: 14px;
+  }
+  
+  .mensaje-linea.asincrono::after {
+    content: '>>';
+    position: absolute;
+    right: -15px;
+    top: -8px;
+    font-size: 14px;
+  }
+  
+  .mensaje-linea.respuesta {
+    border-top: 2px dashed #333;
+    background: none;
+  }
+  
+  .mensaje-texto {
+    position: absolute;
+    top: -25px;
+    width: 100%;
+    text-align: center;
+    background: white;
+    padding: 5px;
+    margin: 0;
+    z-index: 1;
+    white-space: nowrap;
+  }
+  
+  .linea-tiempo {
+    position: relative;
+    min-height: 500px;
+    padding: 2rem;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+  
+  .participantes-header {
+    display: flex;
+    gap: 150px;
+    margin-bottom: 2rem;
+    padding: 0 2rem;
+  }
+  
+  .participante-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .diagram-node text {
+    font-size: 8px !important;
+    font-family: sans-serif !important;
+  }
+  
+  .diagram-node rect {
+    stroke-width: 0.5px !important;
+  }
+  
+  .diagram-link {
+    stroke-width: 0.5px !important;
+  }
+  
+  .diagram-link.dashed {
+    stroke-dasharray: 2, 2 !important;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #666;
+  }
+  
