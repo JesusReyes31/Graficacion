@@ -1,153 +1,379 @@
-import { Component, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import * as go from 'gojs';
-
-const $ = go.GraphObject.make;
 
 @Component({
   selector: 'app-clases',
-  imports: [],
   templateUrl: './clases.component.html',
-  styleUrl: './clases.component.css'
+  styleUrls: ['./clases.component.css']
 })
-export class ClasesComponent {
+export class ClasesComponent implements AfterViewInit {
   public diagram: go.Diagram | null = null;
-  
+
   @ViewChild('diagramDiv') diagramDiv!: ElementRef;
-  
-
-  constructor() {}
-
-  ngOnInit(): void {}
+  @ViewChild('paletteDiv') paletteDiv!: ElementRef;
 
   ngAfterViewInit(): void {
+    this.initDiagram();
+    this.initPalette();
+  }
+
+  initDiagram(): void {
+    const $ = go.GraphObject.make;
     this.diagram = $(go.Diagram, this.diagramDiv.nativeElement, {
-      'undoManager.isEnabled': true
+      'undoManager.isEnabled': true,
+      "draggingTool.isEnabled": true,
+      "linkingTool.isEnabled": true,
+      "linkReshapingTool.isEnabled": true,
+      "model.linkFromKeyProperty": "from",
+      "model.linkToKeyProperty": "to",
     });
 
-    // Definir la plantilla de nodos (clases)
-    this.diagram.nodeTemplate = $(go.Node, 'Auto',
-      { locationSpot: go.Spot.Center }, // Ubicación central
-      $(go.Shape, 'Rectangle',
-        { strokeWidth: 1, stroke: 'black', fill: 'lightgray', minSize: new go.Size(80, 60) }
-      ),
-      $(go.Panel, 'Table',
-        { defaultRowSeparatorStroke: 'black' },
+    this.diagram.nodeTemplateMap = this.createNodeTemplates($);
+    this.diagram.linkTemplateMap = this.createLinkTemplates($);
+    this.diagram.groupTemplateMap = this.createGroupTemplates($);
 
-        // Nombre de la clase
-        $(go.Panel, 'Auto', { row: 0, margin: 4 },
-          $(go.TextBlock,
-            { font: 'bold 16px sans-serif', editable: true, textAlign: 'center', stretch: go.GraphObject.Fill },
-            new go.Binding('text', 'name').makeTwoWay()
-          )
-        ),
+    // Listener para manejar nodos fuera de límites
+    this.diagram.addDiagramListener('SelectionMoved', (e) => {
+      const diagram = e.diagram;
+      if (!diagram) return;
+    
+      e.subject.each((node: go.Node) => {
+        if (node instanceof go.Node && node.containingGroup) {
+          const groupBounds = node.containingGroup.actualBounds;
+          const nodeBounds = node.actualBounds;
+    
+          // Comprueba si el nodo está fuera del grupo
+          if (!groupBounds.containsRect(nodeBounds)) {
+            const model = diagram.model as go.GraphLinksModel;
+            const nodeData = node.data;
+    
+            if (nodeData && model) {
+              model.setDataProperty(nodeData, "group", null); // Elimina la referencia al grupo
+            }
+          }
+        }
+      });
+    });
+    
+    
 
-        // Atributos
-        $(go.Panel, 'Auto', { row: 1, margin: 4 },
-          $(go.TextBlock,
-            { font: 'italic 12px sans-serif', editable: true, stretch: go.GraphObject.Fill },
-            new go.Binding('text', 'attributes').makeTwoWay()
-          )
-        ),
+    this.diagram.model = new go.GraphLinksModel(
+      [
+        { key: 1, category: "classWithAttributesAndMethods", name: "Clase", attributes: "-atributo1: tipo\n-atributo2: tipo", methods: "+metodo1(): tipo\n+metodo2(): tipo" },
+        { key: 2, category: "classWithAttributesAndMethods", name: "Clase", attributes: "-atributo1: tipo\n-atributo2: tipo", methods: "+metodo1(): tipo\n+metodo2(): tipo" }
+      ],
+      [
+        { from: 1, to: 2, rightText: "Relación" }
+      ]
+    );
 
-        // Métodos
-        $(go.Panel, 'Auto', { row: 2, margin: 4 },
-          $(go.TextBlock,
-            { font: 'italic 12px sans-serif', editable: true, stretch: go.GraphObject.Fill },
-            new go.Binding('text', 'methods').makeTwoWay()
-          )
+    (this.diagram.model as go.GraphLinksModel).nodeCategoryProperty = "category";
+  }
+
+  initPalette(): void {
+    const $ = go.GraphObject.make;
+    const palette = $(go.Palette, this.paletteDiv.nativeElement, {
+      nodeTemplateMap: this.createNodeTemplates($),    // Plantillas de nodos (para clases)
+      groupTemplateMap: this.createGroupTemplates($),  // Plantillas de grupos (para paquetes)
+      initialContentAlignment: go.Spot.Center,
+      model: new go.GraphLinksModel([
+        { category: "classOnly", name: "Clase" },
+        { category: "classWithAttributes", name: "Clase", attributes: "-atributo1: tipo\n-atributo2: tipo" },
+        { category: "classWithAttributesAndMethods", name: "Clase", attributes: "-atributo1: tipo\n-atributo2: tipo", methods: "+metodo1(): tipo\n+metodo2(): tipo" },
+        { category: "package", name: "Paquete", isGroup: true }  // Ahora esto se usa para los grupos
+      ])
+    });
+  }
+  
+
+  createNodeTemplates($: any): go.Map<string, go.Node> {
+    const commonNodeProps = {
+      locationSpot: go.Spot.Center,
+      movable: true,
+      deletable: true,
+      resizable: true,
+      minSize: new go.Size(100, 50)
+    };
+
+    const classOnlyTemplate = $(go.Node, "Auto", commonNodeProps,
+      $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
+      $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
+        $(go.Panel, "Auto", { row: 0, margin: 4 },
+          $(go.TextBlock, { font: "bold 16px sans-serif", editable: true, textAlign: "center", stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) },
+            new go.Binding("text", "name").makeTwoWay())
         )
       )
     );
 
-    // Definir la plantilla de enlaces (conexiones entre clases)
-    this.diagram.linkTemplate = $(go.Link,
-      { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },
-      $(go.Shape), // Línea del enlace
-      $(go.Shape, { toArrow: 'OpenTriangle' }) // Flecha en el destino
+    const classWithAttributesTemplate = $(go.Node, "Auto", commonNodeProps,
+      $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
+      $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
+        $(go.Panel, "Auto", { row: 0, margin: 4 },
+          $(go.TextBlock, { font: "bold 16px sans-serif", editable: true, textAlign: "center", stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) },
+            new go.Binding("text", "name").makeTwoWay())
+        ),
+        $(go.Panel, "Auto", { row: 1, margin: 4 },
+          $(go.TextBlock, { font: "italic 12px sans-serif", editable: true, stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) },
+            new go.Binding("text", "attributes").makeTwoWay())
+        )
+      )
     );
 
-    // Inicializa el modelo con una clase y una relación
-    this.diagram.model = new go.GraphLinksModel(
-      [
-        { key: 1, name: 'Clase1', 
-          attributes: 'atributo1: tipo\natributo2: tipo',
-          methods: 'metodo1(): tipo\nmetodo2(): tipo' },
-        { key: 2, name: 'Clase2', 
-          attributes: 'atributo1: tipo\natributo2: tipo',
-          methods: 'metodo1(): tipo\nmetodo2(): tipo' }
-      ],
-      [
-        { from: 1, to: 2 } // Conexión entre Clase1 y Clase2
-      ]
+    const classWithAttributesAndMethodsTemplate = $(go.Node, "Auto", commonNodeProps,
+      $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
+      $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
+        $(go.Panel, "Auto", { row: 0, margin: 4 },
+          $(go.TextBlock, { font: "bold 16px sans-serif", editable: true, textAlign: "center", stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) },
+            new go.Binding("text", "name").makeTwoWay())
+        ),
+        $(go.Panel, "Auto", { row: 1, margin: 4 },
+          $(go.TextBlock, { font: "italic 12px sans-serif", editable: true, stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) },
+            new go.Binding("text", "attributes").makeTwoWay())
+        ),
+        $(go.Panel, "Auto", { row: 2, margin: 4 },
+          $(go.TextBlock, { font: "italic 12px sans-serif", editable: true, stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) },
+            new go.Binding("text", "methods").makeTwoWay())
+        )
+      )
     );
+
+    return new go.Map<string, go.Node>()
+      .set("classOnly", classOnlyTemplate)
+      .set("classWithAttributes", classWithAttributesTemplate)
+      .set("classWithAttributesAndMethods", classWithAttributesAndMethodsTemplate);
   }
 
-  addClass(): void {
-    if (!this.diagram) return;
+  createGroupTemplates($: any): go.Map<string, go.Group> {
+    const commonNodeProps = {
+      locationSpot: go.Spot.Center,
+      movable: true,
+      deletable: true,
+      resizable: true,
+      minSize: new go.Size(160, 100)
+    };
+  
+    // Plantilla para los paquetes (estilo visual personalizado)
+    const packageTemplate = $(go.Group, "Auto", {
+      ...commonNodeProps,
+      layout: $(go.GridLayout, { wrappingColumn: 3, alignment: go.GridLayout.Position }),
+      computesBoundsAfterDrag: true,
+      // Habilitar el grupo completo como puerto de conexión
+      // Eventos para manejar arrastre y soltado
+      mouseDragEnter: (e: any, grp: go.Group, prev: any) => {
+        grp.isHighlighted = true;
+        grp.background = "lightgreen"; // Resalta el área de arrastre cuando entra una clase
+        if (grp.diagram) {
+          grp.diagram.updateAllTargetBindings(); // Usar updateAllTargetBindings en lugar de updateTargetBindings
+        }
+      },
+      mouseDragLeave: (e: any, grp: go.Group, next: any) => {
+        grp.isHighlighted = false;
+        grp.background = "lightgoldenrodyellow"; // Restaura el fondo del área
+        if (grp.diagram) {
+          grp.diagram.updateAllTargetBindings(); // Usar updateAllTargetBindings en lugar de updateTargetBindings
+        }
+      },
+      mouseDrop: (e: any, grp: any) => {
+        const selection = grp.diagram?.selection;
+        if (selection && selection.size > 0) {
+          grp.addMembers(selection, true); // Agregar nodos seleccionados al grupo
+        }
+      }
+      
+      
+    },
+      $(go.Shape, 'Rectangle',
+        { fill: 'white', stroke: 'black', strokeWidth: 2 },
+        new go.Binding('stroke', 'black', (h: boolean) => h ? 'dodgerblue' : 'lightgray').ofObject()
+      ),
+      $(go.Panel, 'Vertical',
+        $(go.Panel, 'Horizontal', {
+          stretch: go.GraphObject.Horizontal,
+          background: '#DCE8E8',
+          padding: 5
+        },
+          $('SubGraphExpanderButton', { margin: 5 }),
+          $(go.TextBlock, {
+            alignment: go.Spot.Left, font: 'Bold 12pt sans-serif', margin: 5, editable: true
+          },
+            new go.Binding('text', 'name').makeTwoWay()
+          )
+        ),
+        $(go.Placeholder, { padding: 10 }) // Contenedor para nodos hijos
+      )
+    );
+  
+    return new go.Map<string, go.Group>()
+      .set("package", packageTemplate); // Registro en el mapa con categoría "package"
+  }
+  
+  
+  
+  
 
-    const model = this.diagram.model as go.GraphLinksModel;
-    const newKey = model.nodeDataArray.length + 1;
-
-    const newClass = {
-      key: newKey,
-      name: `Clase${newKey}`,
-      attributes: 'atributo1: tipo\natributo2: tipo',
-      methods: 'metodo1(): tipo\nmetodo2(): tipo'
+  createLinkTemplates($: any): go.Map<string, go.Link> {
+    const commonLinkProps = {
+      routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver, reshapable: true
     };
 
-    model.addNodeData(newClass);
-
-    const newNode = this.diagram.findNodeForKey(newKey);
-    if (newNode) {
-      newNode.location = new go.Point(Math.random() * 400, Math.random() * 300);
-    }
-  }
-
-  connectClasses(): void {
-    if (!this.diagram) return;
-  
-    const model = this.diagram.model as go.GraphLinksModel;
-  
-    // Obtener los nodos seleccionados
-    const selectedNodes = this.diagram.selection.toArray().filter(node => node instanceof go.Node) as go.Node[];
-  
-    if (selectedNodes.length < 2) {
-      alert('Selecciona al menos dos clases para conectarlas.');
-      return;
-    }
-  
-    // Obtener las claves de los últimos dos nodos seleccionados
-    const fromKey = selectedNodes[selectedNodes.length - 2].data.key;
-    const toKey = selectedNodes[selectedNodes.length - 1].data.key;
-  
-    // Agregar un enlace entre ellos
-    model.addLinkData({ from: fromKey, to: toKey });
-  }
-  
-  deleteClass(): void {
-    if (!this.diagram) return;
-  
-    // Obtener el nodo seleccionado
-    const selectedNode = this.diagram.selection.first();
-    
-    if (!(selectedNode instanceof go.Node)) {
-      alert('Selecciona una clase para eliminar.');
-      return;
-    }
-  
-    const model = this.diagram.model as go.GraphLinksModel;
-    
-    // Obtener la clave del nodo seleccionado
-    const nodeKey = selectedNode.data['key']; // Acceso seguro
-  
-    // Filtrar y eliminar todas las relaciones (enlaces) asociadas al nodo
-    const linksToRemove = model.linkDataArray.filter(link => 
-      link['from'] === nodeKey || link['to'] === nodeKey
+    const associationLinkTemplate = $(go.Link, commonLinkProps,
+      $(go.Shape, { strokeWidth: 2, stroke: "black" }),
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black" }),
+      $(go.TextBlock, {
+        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+      },
+        new go.Binding("text", "rightText").makeTwoWay())
     );
-  
-    linksToRemove.forEach(link => model.removeLinkData(link));
-  
-    // Eliminar el nodo seleccionado
-    model.removeNodeData(selectedNode.data);
+
+    const aggregationLinkTemplate = $(go.Link, commonLinkProps,
+      $(go.Shape, { strokeWidth: 2, stroke: "blue" }),
+      $(go.Shape, { toArrow: "Diamond", stroke: "blue", fill: "white" }),
+      $(go.TextBlock, {
+        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+      },
+        new go.Binding("text", "rightText").makeTwoWay())
+    );
+
+    const compositionLinkTemplate = $(go.Link, commonLinkProps,
+      $(go.Shape, { strokeWidth: 2, stroke: "red" }),
+      $(go.Shape, { toArrow: "Diamond", stroke: "red", fill: "black" }),
+      $(go.TextBlock, {
+        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+      },
+        new go.Binding("text", "rightText").makeTwoWay())
+    );
+
+    const generalizationLinkTemplate = $(go.Link, commonLinkProps,
+      $(go.Shape, { strokeWidth: 2, stroke: "green" }),
+      $(go.Shape, { toArrow: "Triangle", stroke: "green", fill: "white" }),
+      $(go.TextBlock, {
+        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+      },
+        new go.Binding("text", "rightText").makeTwoWay())
+    );
+
+    const dependencyLinkTemplate = $(go.Link, commonLinkProps,
+      $(go.Shape, { strokeWidth: 2, strokeDashArray: [4, 2] }),
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black", fill: "white" }),
+      $(go.TextBlock, {
+        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+      },
+        new go.Binding("text", "rightText").makeTwoWay())
+    );
+
+    const realizationLinkTemplate = $(go.Link, commonLinkProps,
+      $(go.Shape, { strokeWidth: 2, strokeDashArray: [4, 4] }),
+      $(go.Shape, { toArrow: "Triangle", stroke: "black", fill: "white" }),
+      $(go.TextBlock, {
+        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+      },
+        new go.Binding("text", "rightText").makeTwoWay())
+    );
+
+    const reflexiveAssociationLinkTemplate = $(go.Link, commonLinkProps,
+      $(go.Shape, { strokeWidth: 2, stroke: "black" }),
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black" }),
+      $(go.TextBlock, {
+        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+      },
+        new go.Binding("text", "rightText").makeTwoWay())
+    );
+
+    return new go.Map<string, go.Link>()
+      .set("association", associationLinkTemplate)
+      .set("aggregation", aggregationLinkTemplate)
+      .set("composition", compositionLinkTemplate)
+      .set("generalization", generalizationLinkTemplate)
+      .set("dependency", dependencyLinkTemplate)
+      .set("realization", realizationLinkTemplate)
+      .set("reflexiveAssociation", reflexiveAssociationLinkTemplate);
+  }
+
+  connectAssociation(): void {
+    this.createLink("Asociación");
+  }
+
+  connectAssociationReflexive(): void {
+    this.createLink("Asociación Reflexiva", "◯");
+  }
+
+  connectAggregation(): void {
+    this.createLink("Agregación", "◇");
+  }
+
+  connectComposition(): void {
+    this.createLink("Composición", "◆");
+  }
+
+  connectGeneralization(): void {
+    this.createLink("Generalización", "△");
+  }
+
+  connectDependency(): void {
+    this.createLink("Dependencia", "▷", true);
+  }
+
+  connectRealization(): void {
+    this.createLink("Realización", "△", true);
+  }
+
+  private createLink(relationshipType: string, symbol: string = "", dashed: boolean = false): void {
+    if (!this.diagram) return;
+
+    const model = this.diagram.model as go.GraphLinksModel;
+    const selectedNodes = this.diagram.selection.toArray().filter(node => node instanceof go.Node) as go.Node[];
+
+    if (selectedNodes.length < 2 && relationshipType !== "Asociación Reflexiva") {
+      alert("Selecciona al menos dos clases para conectarlas.");
+      return;
+    }
+
+    if (selectedNodes.length < 1 && relationshipType === "Asociación Reflexiva") {
+      alert("Selecciona solo 1 clase para conectarla.");
+      return;
+    }
+
+    const fromKey = relationshipType === "Asociación Reflexiva" ? selectedNodes[0].data.key : selectedNodes[selectedNodes.length - 2].data.key;
+    const toKey = relationshipType === "Asociación Reflexiva" ? selectedNodes[0].data.key : selectedNodes[selectedNodes.length - 1].data.key;
+
+    let linkCategory = "solid";
+    let symbolArrow = "";
+
+    switch (relationshipType) {
+      case "Dependencia":
+        linkCategory = "dependency";
+        symbolArrow = "OpenTriangle";
+        break;
+      case "Generalización":
+        linkCategory = "generalization";
+        symbolArrow = "Triangle";
+        break;
+      case "Composición":
+        linkCategory = "composition";
+        symbolArrow = "Diamond";
+        break;
+      case "Realización":
+        linkCategory = "realization";
+        symbolArrow = "OpenTriangle";
+        break;
+      case "Agregación":
+        linkCategory = "aggregation";
+        symbolArrow = "Diamond";
+        break;
+      case "Asociación Reflexiva":
+        linkCategory = "reflexiveAssociation";
+        symbolArrow = "Circle";
+        break;
+      case "Asociación":
+        linkCategory = "association";
+        break;
+    }
+
+    model.addLinkData({
+      from: fromKey,
+      to: toKey,
+      rightText: `${symbol} ${relationshipType}`,
+      category: linkCategory,
+    });
   }
 }
