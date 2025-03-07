@@ -205,6 +205,17 @@ export class SecuenciaComponent implements OnInit, AfterViewInit {
         orden: this.mensajes.length
       };
       this.mensajes.push(nuevoMensaje);
+
+      // Agregar activación solo para el objeto destino en mensajes síncronos
+      if (nuevoMensaje.tipo === 'sincrono') {
+        const destinoParticipante = this.participantes.find(p => p.nombre === nuevoMensaje.destino);
+        if (destinoParticipante) {
+          const inicio = (nuevoMensaje.orden + 1) * this.MENSAJE_SPACING + this.PARTICIPANTE_HEIGHT;
+          const fin = inicio + this.MENSAJE_SPACING;
+          destinoParticipante.activaciones.push({ inicio, fin });
+        }
+      }
+
       this.nuevoMensaje = {
         origen: '',
         destino: '',
@@ -217,8 +228,20 @@ export class SecuenciaComponent implements OnInit, AfterViewInit {
   }
 
   eliminarMensaje(index: number) {
+    // Eliminar las activaciones correspondientes
+    const mensaje = this.mensajes[index];
+    if (mensaje.tipo === 'sincrono') {
+      const destinoParticipante = this.participantes.find(p => p.nombre === mensaje.destino);
+      if (destinoParticipante) {
+        const inicio = (mensaje.orden + 1) * this.MENSAJE_SPACING + this.PARTICIPANTE_HEIGHT;
+        destinoParticipante.activaciones = destinoParticipante.activaciones.filter(
+          a => a.inicio !== inicio
+        );
+      }
+    }
+
     this.mensajes.splice(index, 1);
-    // Actualizar el orden de los mensajes restantes
+    // Actualizar el orden de los mensajes restantes y sus activaciones
     this.mensajes.forEach((mensaje, i) => {
       mensaje.orden = i;
     });
