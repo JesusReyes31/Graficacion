@@ -1,1 +1,58 @@
-<p>secuencia works!</p>
+<div class="secuencia-container">
+  <!-- Panel de Control -->
+  <div class="panel-control">
+    <!-- Sección de Participantes -->
+    <div class="participantes-section">
+      <h3>Participantes</h3>
+      <div class="nuevo-participante">
+        <input type="text" [(ngModel)]="nuevoParticipante.nombre" placeholder="Nombre del participante">
+        <select [(ngModel)]="nuevoParticipante.tipo">
+          <option value="objeto">Objeto</option>
+          <option value="actor">Actor</option>
+        </select>
+        <button (click)="agregarParticipante()" [disabled]="!nuevoParticipante.nombre">Agregar</button>
+      </div>
+      <div class="lista-participantes">
+        <div class="participante-item" *ngFor="let participante of participantes; let i = index">
+          <span>{{participante.nombre}} ({{participante.tipo}})</span>
+          <button class="btn-eliminar" (click)="eliminarParticipante(i)">×</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Mensajes -->
+    <div class="mensajes-section">
+      <h3>Mensajes</h3>
+      <div class="nuevo-mensaje">
+        <select [(ngModel)]="nuevoMensaje.origen">
+          <option value="">Seleccione origen</option>
+          <option *ngFor="let p of participantes" [value]="p.nombre">{{p.nombre}}</option>
+        </select>
+        <select [(ngModel)]="nuevoMensaje.destino">
+          <option value="">Seleccione destino</option>
+          <option *ngFor="let p of participantes" [value]="p.nombre">{{p.nombre}}</option>
+        </select>
+        <input type="text" [(ngModel)]="nuevoMensaje.mensaje" placeholder="Mensaje">
+        <select [(ngModel)]="nuevoMensaje.tipo">
+          <option value="sincrono">Mensaje</option>
+          <option value="respuesta">Respuesta</option>
+        </select>
+        <button (click)="agregarMensaje()" [disabled]="!nuevoMensaje.mensaje || !nuevoMensaje.origen || !nuevoMensaje.destino">
+          Agregar Mensaje
+        </button>
+      </div>
+      <div class="lista-mensajes">
+        <div class="mensaje-item" *ngFor="let mensaje of mensajes; let i = index">
+          <span>{{i + 1}}. {{mensaje.origen}} → {{mensaje.destino}}: {{mensaje.mensaje}}</span>
+          <button class="btn-eliminar" (click)="eliminarMensaje(i)">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área del Diagrama -->
+  <div class="diagrama-preview">
+    <h3>Vista Previa del Diagrama</h3>
+    <div #diagramDiv class="diagram-container"></div>
+  </div>
+</div>

@@ -32,6 +32,7 @@ export class CUComponent {
       'linkingTool.direction':go.LinkingTool.ForwardsOnly,
       'animationManager.isEnabled': true,
       "draggingTool.isGridSnapEnabled": true,
+      "grid.visible":true
     });
 
     this.diagram.nodeTemplateMap = this.getNodeTemplateMap();
@@ -239,9 +240,10 @@ export class CUComponent {
   getLinkTemplate(): go.Link {
     const $ = go.GraphObject.make;
     return $(go.Link,
-      { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver, corner: 5, relinkableFrom:true, relinkableTo:true, selectable:true,toShortLength:4,fromShortLength:4 }, // 🔹 Línea recta con efecto de "saltar" sobre otras líneas
+      { routing: go.Link.Orthogonal,reshapable:true,resegmentable:false,relinkableTo:true,relinkableFrom:true, corner: 5, selectable:true}, 
       $(go.Shape, { stroke: "gray", strokeWidth: 2, strokeDashArray: [4,2] }), // 🔹 Línea de conexión
-      $(go.Shape, { toArrow: "OpenTriangle", stroke: "gray", fill: "white" ,strokeWidth:3}) // 🔹 Flecha al final
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "gray", fill: "white" ,strokeWidth:3}),
+      new go.Binding("points").makeTwoWay()
     );
   }
 
@@ -249,7 +251,7 @@ export class CUComponent {
     // console.log("Se Guardó")
     if (this.diagram) {
       const json = this.diagram.model.toJson();
-      localStorage.setItem("umlDiagram", json);
+      localStorage.setItem("DiagramCU"+sessionStorage.getItem("proyecto"), json);
       // console.log("Diagrama guardado:", json);
     }
   }
@@ -261,9 +263,7 @@ export class CUComponent {
   }
 
   loadDiagram() {
-    const savedData = localStorage.getItem("umlDiagram");
-    // console.log("Cargando diagrama desde localStorage:", savedData);
-    
+    const savedData = localStorage.getItem("DiagramCU"+sessionStorage.getItem("proyecto"));
     if (savedData) {
       const model = go.Model.fromJson(savedData) as go.GraphLinksModel;
       model.linkKeyProperty = "key";  // 🔹 Restaurar la clave de enlaces únicos

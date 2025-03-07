@@ -21,3 +21,4 @@ describe('SecuenciaComponent', () => {
     expect(component).toBeTruthy();
   });
 });
+

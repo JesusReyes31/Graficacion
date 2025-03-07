@@ -1,0 +1,47 @@
+.palette-container {
+    width: 120px;
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .palette-header {
+    background-color: #f0f0f0;
+    padding: 8px;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  #palette {
+    height: 100px;
+    overflow-y: auto;
+  }
+  
+  .diagram {
+    flex-grow: 1;
+    height: 100%;
+    border: 1px solid #ccc;
+  }
+  
+  .tools {
+    padding: 8px;
+  }
+  
+  
+  
+  button {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  button.active {
+    background-color: green;
+  }
+  
+  
+  

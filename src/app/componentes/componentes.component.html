@@ -1,1 +1,14 @@
-<p>componentes works!</p>
+<div style="display: flex; width: 100%; height: 100vh;">
+    <div class="palette-container">
+      <div class="palette-header">Elementos</div>
+      <div id="palette"></div>
+      <div class="tools">
+        <button id="ofrecida" [ngClass]="{'active': interOfrecida}" (click)="toggleInterfaz('ofrecida')">--C</button>
+        <br>
+        <br>
+        <button id="solicitada" [ngClass]="{'active': interSolicitada}" (click)="toggleInterfaz('solicitada')">--O</button>
+      </div>
+    </div>
+    <div #diagramDiv class="diagram"></div>
+  </div>
+  
