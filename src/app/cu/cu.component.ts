@@ -32,7 +32,7 @@ export class CUComponent {
       'linkingTool.direction':go.LinkingTool.ForwardsOnly,
       'animationManager.isEnabled': true,
       "draggingTool.isGridSnapEnabled": true,
-      "grid.visible":true
+      "grid.visible":false
     });
 
     this.diagram.nodeTemplateMap = this.getNodeTemplateMap();

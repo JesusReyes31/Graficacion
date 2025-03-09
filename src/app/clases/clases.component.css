@@ -1,36 +1,50 @@
-.contenedor div {
-    border: 1px solid black;
-    background-color: white;
-    height: 600px;
-}
-
-.contenedor{
+/* === Estilos Diagramas de Clases Modernos === */
+.contenedor {
     display: flex;
     width: 100%;
-    height: 80vh;
-}
-
-#paletteDiv{
-    width: 200px !important;
-}
-
-.botones-relaciones {
+    height: 85vh;
+    gap: 20px;
+  }
+  
+  /* Panel lateral - Paleta */
+  #paletteDiv {
+    width: 250px !important;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 15px;
+  }
+  
+  /* Contenedor del diagrama */
+  .contenedor div {
+    border: 1px solid #ddd;
+    background-color: white;
+    height: 600px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+  }
+  
+  /* Botones de relaciones */
+  .botones-relaciones {
     margin: 10px;
     display: flex;
     justify-content: center;
     padding: 6px;
-}
-
-.botones-relaciones button {
-    margin-right: 5px;
-    padding: 8px 12px;
+    gap: 10px;
+  }
+  
+  .botones-relaciones button {
+    padding: 10px 16px;
     font-size: 14px;
-    background-color: lightblue;
-    border-radius: 6px;
+    background-color: #38bdf8;
+    border-radius: 8px;
     border: none;
-}
-
-button:hover{
-    background-color:cornflowerblue !important;
+    color: white;
     cursor: pointer;
-}
+    transition: background 0.3s ease;
+  }
+  
+  .botones-relaciones button:hover {
+    background-color: #0284c7;
+  }
+  

@@ -18,7 +18,8 @@ export class AppComponent {
   creandoProyecto: boolean = false;
   nuevoProyecto: string = '';
   isButtonDisabled = true;
-  showComponent = true
+  showComponent = true;
+  public sidebarVisible: boolean = true;
 
   constructor(private router:Router){}
 
@@ -36,7 +37,9 @@ export class AppComponent {
       sessionStorage.setItem('proyecto',this.proyectoSeleccionado)
     }
   }
-
+  toggleSidebar() {
+    this.sidebarVisible = !this.sidebarVisible;
+  }
   seleccionarProyecto(proyecto: string) {
     this.proyectoSeleccionado = proyecto;
     sessionStorage.setItem('proyecto',proyecto)

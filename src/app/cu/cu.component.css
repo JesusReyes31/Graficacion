@@ -1,54 +1,61 @@
+/* === Estilos Mejorados para Casos de Uso === */
 #myDiagramDiv {
-    border: 1px solid black;
-    background-color: #f4f4f4;
-  }
-  
-  #paletteDiv {
-    border: 1px solid black;
-    background-color: #f4f4f4;
-    overflow: hidden;
-  }
-  
-  /* Panel lateral: paleta */
-.uml-palette-container {
-  /* margin-top: 15px; */
-  margin-left: 10px;
-  width: 200px;
+  border: 2px solid #d1d5db;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  width: 100%;
   height: 75vh;
-  background: #ffffff;
-  border-right: 1px solid #ddd;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar - Paleta de elementos */
+.uml-palette-container {
+  width: 250px;
+  height: 75vh;
+  background: #f9fafb;
+  border-radius: 12px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 15px;
   display: flex;
   flex-direction: column;
 }
 
-/* Área de la paleta: permite scroll si hay muchos elementos */
 .uml-palette {
   flex: 1;
-  /* padding: 15px; */
   overflow-y: auto;
 }
 
-/* Toolbar: área inferior del sidebar con fondo sutil */
-.toolbar {
-  padding: 15px;
-  border-top: 1px solid #ddd;
-  background: #fafafa;
-  text-align: center;
+/* Área de diagramas */
+.uml-diagram-container {
+  flex-grow: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Botón con estilo moderno */
+/* Toolbar */
+.toolbar {
+  padding: 15px;
+  border-top: 1px solid #d1d5db;
+  /* background: #e5e7eb; */
+  text-align: center;
+  border-radius: 0 0 12px 12px;
+}
+
 .toolbar button {
-  background-color: #007bff;
-  border: none;
-  color: #fff;
+  background-color: #38bdf8;
+  color: white;
+  border-radius: 8px;
   padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s ease;
+  transition: background 0.3s ease, transform 0.2s;
 }
 
 .toolbar button:hover {
-  background-color: #0056b3;
+  background-color: #0284c7;
+  transform: scale(1.05);
 }

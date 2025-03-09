@@ -1,47 +1,68 @@
+/* === Contenedor de la paleta === */
 .palette-container {
-    width: 120px;
-    border-right: 1px solid #ccc;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .palette-header {
-    background-color: #f0f0f0;
-    padding: 8px;
-    font-weight: bold;
-    border-bottom: 1px solid #ccc;
-  }
-  
-  #palette {
-    height: 100px;
-    overflow-y: auto;
-  }
-  
-  .diagram {
-    flex-grow: 1;
-    height: 100%;
-    border: 1px solid #ccc;
-  }
-  
-  .tools {
-    padding: 8px;
-  }
-  
-  
-  
-  button {
-    background-color: red;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  
-  button.active {
-    background-color: green;
-  }
-  
-  
-  
+  width: 180px; /* Más ancho para mejor usabilidad */
+  border-right: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+  margin-right: 15px;
+}
+
+/* Encabezado de la paleta */
+.palette-header {
+  background-color: #e2e8f0;
+  padding: 12px;
+  font-weight: bold;
+  border-bottom: 2px solid #ccc;
+  text-align: center;
+  border-radius: 8px 8px 0 0;
+}
+
+/* Contenedor de herramientas */
+#palette {
+  height: 70vh;
+  /* overflow-y: auto; */
+  padding: 10px;
+}
+
+/* === Sección del diagrama === */
+.diagram {
+  flex-grow: 1;
+  height: 100%;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background-color: white;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+  padding: 15px;
+}
+
+/* === Contenedor de herramientas === */
+.tools {
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* === Botones Modernos === */
+button {
+  background-color: #38bdf8;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #0284c7;
+}
+
+button.active {
+  background-color: #16a34a; /* Verde más suave */
+}
