@@ -9,8 +9,8 @@ import * as go from 'gojs';
 export class PaquetesComponent implements OnInit, AfterViewInit {
   public myDiagram!: go.Diagram;
   public myPalette!: go.Palette;
-  public relationshipMode: boolean = false; // Bandera para el modo de relación
-  private storageKey = 'myDiagramModel'; // Clave para el localStorage
+  public relationshipMode: boolean = false;
+  private storageKey = 'myDiagramModelpa'; 
 
   constructor() {}
 
@@ -32,6 +32,10 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
       'undoManager.isEnabled': true
     });
 
+    this.myDiagram.mouseDrop = (e) => {
+      this.myDiagram.commandHandler.addTopLevelParts(this.myDiagram.selection, true);
+    }; 
+
     // Por defecto, la herramienta de enlace está deshabilitada
     this.myDiagram.toolManager.linkingTool.isEnabled = false;
 
@@ -42,7 +46,7 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
           movable: true,
           deletable: true,
           selectionAdorned: true,
-          // Habilitar el nodo completo como puerto de conexión:
+          // resizable: true,
           portId: '',
           fromLinkable: true,
           toLinkable: true
@@ -57,22 +61,29 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
     this.myDiagram.groupTemplate =
       $(go.Group, 'Auto',
         {
-          layout: $(go.GridLayout, { wrappingColumn: 1, alignment: go.GridLayout.Position }),
+          layout: $(go.GridLayout, { wrappingColumn: 2}),//, alignment: go.GridLayout.Position }),
           movable: true,
           deletable: true,
           computesBoundsAfterDrag: true,
-          // Habilitar el grupo completo como puerto de conexión:
+          // resizable: true,
           portId: '',
           fromLinkable: true,
           toLinkable: true,
           mouseDragEnter: (e: any, grp: any, prev: any) => { grp.isHighlighted = true; },
           mouseDragLeave: (e: any, grp: any, next: any) => { grp.isHighlighted = false; },
+          // mouseDrop: (e: any, grp: any) => {
+          //   const node = grp.diagram.selection.first();
+          //   if (node instanceof go.Node) {
+          //     grp.addMembers(grp.diagram.selection, true);
+          //   }
+          // }
           mouseDrop: (e: any, grp: any) => {
-            const node = grp.diagram.selection.first();
-            if (node instanceof go.Node) {
-              grp.addMembers(grp.diagram.selection, true);
+            const diagram = grp.diagram;
+            if (diagram.selection.count > 0) {
+              const nodes = diagram.selection.toArray();
+              grp.addMembers(nodes, true);
             }
-          }
+          }          
         },
         $(go.Shape, 'RoundedRectangle',
           { fill: 'whitesmoke', stroke: 'lightgray', strokeWidth: 2 },
@@ -168,3 +179,4 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
     });
   }
 }
+  
