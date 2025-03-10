@@ -27,26 +27,26 @@ export class ClasesComponent implements AfterViewInit {
       "model.linkFromKeyProperty": "from",
       "model.linkToKeyProperty": "to",
     });
-
+  
     this.diagram.nodeTemplateMap = this.createNodeTemplates($);
     this.diagram.linkTemplateMap = this.createLinkTemplates($);
     this.diagram.groupTemplateMap = this.createGroupTemplates($);
-
+  
     // Listener para manejar nodos fuera de límites
     this.diagram.addDiagramListener('SelectionMoved', (e) => {
       const diagram = e.diagram;
       if (!diagram) return;
-    
+  
       e.subject.each((node: go.Node) => {
         if (node instanceof go.Node && node.containingGroup) {
           const groupBounds = node.containingGroup.actualBounds;
           const nodeBounds = node.actualBounds;
-    
+  
           // Comprueba si el nodo está fuera del grupo
           if (!groupBounds.containsRect(nodeBounds)) {
             const model = diagram.model as go.GraphLinksModel;
             const nodeData = node.data;
-    
+  
             if (nodeData && model) {
               model.setDataProperty(nodeData, "group", null); // Elimina la referencia al grupo
             }
@@ -54,21 +54,20 @@ export class ClasesComponent implements AfterViewInit {
         }
       });
     });
-    
-    
-
+  
+    // Modelo de datos con nodos y relaciones
     this.diagram.model = new go.GraphLinksModel(
       [
-        { key: 1, category: "classWithAttributesAndMethods", name: "Clase", attributes: "-atributo1: tipo\n-atributo2: tipo", methods: "+metodo1(): tipo\n+metodo2(): tipo" },
-        { key: 2, category: "classWithAttributesAndMethods", name: "Clase", attributes: "-atributo1: tipo\n-atributo2: tipo", methods: "+metodo1(): tipo\n+metodo2(): tipo" }
+        { key: 1, category: "classWithAttributesAndMethods", name: "Clase1", attributes: "-atributo1: tipo\n-atributo2: tipo", methods: "+metodo1(): tipo\n+metodo2(): tipo" },
+        { key: 2, category: "classWithAttributesAndMethods", name: "Clase2", attributes: "-atributo1: tipo\n-atributo2: tipo", methods: "+metodo1(): tipo\n+metodo2(): tipo" }
       ],
       [
         { from: 1, to: 2, rightText: "Relación" }
       ]
     );
-
     (this.diagram.model as go.GraphLinksModel).nodeCategoryProperty = "category";
   }
+  
 
   initPalette(): void {
     const $ = go.GraphObject.make;
@@ -94,7 +93,7 @@ export class ClasesComponent implements AfterViewInit {
       resizable: true,
       minSize: new go.Size(100, 50)
     };
-
+  
     const classOnlyTemplate = $(go.Node, "Auto", commonNodeProps,
       $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
       $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
@@ -104,7 +103,7 @@ export class ClasesComponent implements AfterViewInit {
         )
       )
     );
-
+  
     const classWithAttributesTemplate = $(go.Node, "Auto", commonNodeProps,
       $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
       $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
@@ -118,7 +117,7 @@ export class ClasesComponent implements AfterViewInit {
         )
       )
     );
-
+  
     const classWithAttributesAndMethodsTemplate = $(go.Node, "Auto", commonNodeProps,
       $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
       $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
@@ -136,12 +135,14 @@ export class ClasesComponent implements AfterViewInit {
         )
       )
     );
-
+  
+    // Retorno del mapa de templates
     return new go.Map<string, go.Node>()
       .set("classOnly", classOnlyTemplate)
       .set("classWithAttributes", classWithAttributesTemplate)
       .set("classWithAttributesAndMethods", classWithAttributesAndMethodsTemplate);
   }
+  
 
   createGroupTemplates($: any): go.Map<string, go.Group> {
     const commonNodeProps = {
@@ -190,11 +191,11 @@ export class ClasesComponent implements AfterViewInit {
         $(go.Panel, 'Horizontal', {
           stretch: go.GraphObject.Horizontal,
           background: '#DCE8E8',
-          padding: 5
+          padding: 5,
         },
           $('SubGraphExpanderButton', { margin: 5 }),
           $(go.TextBlock, {
-            alignment: go.Spot.Left, font: 'Bold 12pt sans-serif', margin: 5, editable: true
+            alignment: go.Spot.Left, font: 'Bold 12pt sans-serif', margin: 5, editable: true,minSize: new go.Size(80, 20)
           },
             new go.Binding('text', 'name').makeTwoWay()
           )
@@ -217,10 +218,10 @@ export class ClasesComponent implements AfterViewInit {
     };
 
     const associationLinkTemplate = $(go.Link, commonLinkProps,
-      $(go.Shape, { strokeWidth: 2, stroke: "black" }),
-      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black" }),
+      $(go.Shape, { strokeWidth: 2, stroke: "blue" }),
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "blue" }),
       $(go.TextBlock, {
-        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+        textAlign: "center", font: "bold 14px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true,minSize: new go.Size(80, 20)
       },
         new go.Binding("text", "rightText").makeTwoWay())
     );
@@ -229,25 +230,25 @@ export class ClasesComponent implements AfterViewInit {
       $(go.Shape, { strokeWidth: 2, stroke: "blue" }),
       $(go.Shape, { toArrow: "Diamond", stroke: "blue", fill: "white" }),
       $(go.TextBlock, {
-        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+        textAlign: "center", font: "bold 14px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true,minSize: new go.Size(80, 20)
       },
         new go.Binding("text", "rightText").makeTwoWay())
     );
 
     const compositionLinkTemplate = $(go.Link, commonLinkProps,
-      $(go.Shape, { strokeWidth: 2, stroke: "red" }),
-      $(go.Shape, { toArrow: "Diamond", stroke: "red", fill: "black" }),
+      $(go.Shape, { strokeWidth: 2, stroke: "blue" }),
+      $(go.Shape, { toArrow: "Diamond", stroke: "blue", fill: "blue" }),
       $(go.TextBlock, {
-        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+        textAlign: "center", font: "bold 14px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true,minSize: new go.Size(80, 20)
       },
         new go.Binding("text", "rightText").makeTwoWay())
     );
 
     const generalizationLinkTemplate = $(go.Link, commonLinkProps,
-      $(go.Shape, { strokeWidth: 2, stroke: "green" }),
-      $(go.Shape, { toArrow: "Triangle", stroke: "green", fill: "white" }),
+      $(go.Shape, { strokeWidth: 2, stroke: "blue" }),
+      $(go.Shape, { toArrow: "Triangle", stroke: "blue", fill: "white" }),
       $(go.TextBlock, {
-        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+        textAlign: "center", font: "bold 14px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true,minSize: new go.Size(80, 20)
       },
         new go.Binding("text", "rightText").makeTwoWay())
     );
@@ -256,7 +257,7 @@ export class ClasesComponent implements AfterViewInit {
       $(go.Shape, { strokeWidth: 2, strokeDashArray: [4, 2] }),
       $(go.Shape, { toArrow: "OpenTriangle", stroke: "black", fill: "white" }),
       $(go.TextBlock, {
-        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+        textAlign: "center", font: "bold 14px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true,minSize: new go.Size(80, 20)
       },
         new go.Binding("text", "rightText").makeTwoWay())
     );
@@ -265,16 +266,16 @@ export class ClasesComponent implements AfterViewInit {
       $(go.Shape, { strokeWidth: 2, strokeDashArray: [4, 4] }),
       $(go.Shape, { toArrow: "Triangle", stroke: "black", fill: "white" }),
       $(go.TextBlock, {
-        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+        textAlign: "center", font: "bold 14px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true,minSize: new go.Size(80, 20)
       },
         new go.Binding("text", "rightText").makeTwoWay())
     );
 
     const reflexiveAssociationLinkTemplate = $(go.Link, commonLinkProps,
-      $(go.Shape, { strokeWidth: 2, stroke: "black" }),
-      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black" }),
+      $(go.Shape, { strokeWidth: 2, stroke: "blue" }),
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "blue" }),
       $(go.TextBlock, {
-        textAlign: "center", font: "bold 12px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true
+        textAlign: "center", font: "bold 14px sans-serif", margin: new go.Margin(4, 10, 4, 10), editable: true,minSize: new go.Size(80, 20)
       },
         new go.Binding("text", "rightText").makeTwoWay())
     );
@@ -372,7 +373,7 @@ export class ClasesComponent implements AfterViewInit {
     model.addLinkData({
       from: fromKey,
       to: toKey,
-      rightText: `${symbol} ${relationshipType}`,
+      rightText: `${'1..*'}`,
       category: linkCategory,
     });
   }
