@@ -52,8 +52,8 @@ export class ComponentesComponent implements OnInit {
           toLinkable: true,
           movable: true,
           resizable: true,
-          height: 100,
-          width:300,
+          height: 70,
+          width:150,
           click: (e, obj) => this.addCircleNode(obj.part) // Detectar clic en el rectángulo
         },
         $(go.Shape, "Rectangle",
@@ -68,7 +68,7 @@ export class ComponentesComponent implements OnInit {
             { alignment: go.Spot.Top },
             $(go.TextBlock,
               {
-                font: "bold 14px sans-serif",
+                font: "bold 12px sans-serif",
                 editable: true,
                 margin: new go.Margin(0, 20, 0, 0)  // margen derecho para el ícono
               },
@@ -191,7 +191,6 @@ export class ComponentesComponent implements OnInit {
         )
       }
     );
-    myPalette.scale = 0.5;
   }
   private highlightSemiCircle(node: go.Part, highlight: boolean) {
     const shape = node.findObject("SHAPE") as go.Shape; // Forzar el tipo a Shape

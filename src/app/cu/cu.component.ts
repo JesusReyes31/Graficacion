@@ -81,56 +81,6 @@ export class CUComponent {
       }
     });
   }
-
-  // initPalette() {
-  //   const $ = go.GraphObject.make;
-    
-  //   // Crear una plantilla específica para el área en la paleta
-  //   const areaPaletteTemplate = $(go.Group, "Auto",
-  //     {
-  //       background: "transparent",
-  //       layerName: "Background",
-  //       computesBoundsAfterDrag: true,
-  //       mouseDragEnter: null,
-  //       mouseDragLeave: null,
-  //       mouseDrop: null,
-  //       alignment: go.Spot.Center, // Alinea al centro
-  //     },
-  //     $(go.Shape, "Rectangle", {
-  //       fill: "white",
-  //       stroke: "black",
-  //       strokeWidth: 2,
-  //       minSize: new go.Size(100, 100)
-  //     }),
-  //     $(go.Panel, "Vertical", 
-  //       {
-  //         alignment: go.Spot.Center, // Alinea los elementos en el panel al centro
-  //         margin: new go.Margin(0, 0, 0, 0), // Elimina márgenes si es necesario
-  //       },
-  //       $(go.TextBlock, 
-  //         {
-  //           alignment: go.Spot.Center, // Alinea el texto al centro
-  //           margin: 8,
-  //           editable: true,
-  //           font: "bold 12pt sans-serif"
-  //         },
-  //         new go.Binding("text", "nombre").makeTwoWay()),
-  //       $(go.Placeholder, { padding: 5, background: "transparent" })
-  //     )
-  //   );
-  
-  //   const palette = $(go.Palette, this.paletteDiv.nativeElement, {
-  //     nodeTemplateMap: this.getNodeTemplateMap(),
-  //     initialContentAlignment: go.Spot.Center,
-  //     contentAlignment: go.Spot.Center,
-  //     groupTemplateMap: new go.Map<string, go.Group>().add("area", areaPaletteTemplate),
-  //     model: new go.GraphLinksModel([
-  //       { category: 'actor', text: 'Actor' }, 
-  //       { category: 'usecase', text: 'Caso de Uso' },
-  //       { category: 'area', isGroup: true,nombre:'Area del sistema'}
-  //     ])
-  //   });
-  // }
   
   initPalette() {
     const $ = go.GraphObject.make;
