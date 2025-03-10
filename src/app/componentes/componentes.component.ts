@@ -191,7 +191,7 @@ export class ComponentesComponent implements OnInit {
         )
       }
     );
-    myPalette.scale = 0.3;
+    myPalette.scale = 0.5;
   }
   private highlightSemiCircle(node: go.Part, highlight: boolean) {
     const shape = node.findObject("SHAPE") as go.Shape; // Forzar el tipo a Shape
