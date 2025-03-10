@@ -66,6 +66,11 @@ export class CUComponent {
           if(!CU){
             this.diagram.commandHandler.editTextBlock(<go.TextBlock>part.findObject('CULabel'));
           }
+        }else if (part instanceof go.Group && part.category === 'area') {
+          const nameBlock = part.findObject('GROUP_LABEL');
+          if (nameBlock instanceof go.TextBlock) {
+            this.diagram.commandHandler.editTextBlock(nameBlock);
+          }
         }
       });
     });    
@@ -77,78 +82,149 @@ export class CUComponent {
     });
   }
 
+  // initPalette() {
+  //   const $ = go.GraphObject.make;
+    
+  //   // Crear una plantilla específica para el área en la paleta
+  //   const areaPaletteTemplate = $(go.Group, "Auto",
+  //     {
+  //       background: "transparent",
+  //       layerName: "Background",
+  //       computesBoundsAfterDrag: true,
+  //       mouseDragEnter: null,
+  //       mouseDragLeave: null,
+  //       mouseDrop: null,
+  //       alignment: go.Spot.Center, // Alinea al centro
+  //     },
+  //     $(go.Shape, "Rectangle", {
+  //       fill: "white",
+  //       stroke: "black",
+  //       strokeWidth: 2,
+  //       minSize: new go.Size(100, 100)
+  //     }),
+  //     $(go.Panel, "Vertical", 
+  //       {
+  //         alignment: go.Spot.Center, // Alinea los elementos en el panel al centro
+  //         margin: new go.Margin(0, 0, 0, 0), // Elimina márgenes si es necesario
+  //       },
+  //       $(go.TextBlock, 
+  //         {
+  //           alignment: go.Spot.Center, // Alinea el texto al centro
+  //           margin: 8,
+  //           editable: true,
+  //           font: "bold 12pt sans-serif"
+  //         },
+  //         new go.Binding("text", "nombre").makeTwoWay()),
+  //       $(go.Placeholder, { padding: 5, background: "transparent" })
+  //     )
+  //   );
+  
+  //   const palette = $(go.Palette, this.paletteDiv.nativeElement, {
+  //     nodeTemplateMap: this.getNodeTemplateMap(),
+  //     initialContentAlignment: go.Spot.Center,
+  //     contentAlignment: go.Spot.Center,
+  //     groupTemplateMap: new go.Map<string, go.Group>().add("area", areaPaletteTemplate),
+  //     model: new go.GraphLinksModel([
+  //       { category: 'actor', text: 'Actor' }, 
+  //       { category: 'usecase', text: 'Caso de Uso' },
+  //       { category: 'area', isGroup: true,nombre:'Area del sistema'}
+  //     ])
+  //   });
+  // }
+  
   initPalette() {
     const $ = go.GraphObject.make;
-    
-    // Crear una plantilla específica para el área en la paleta
-    const areaPaletteTemplate = $(go.Group, "Auto",
+  
+    // Plantilla para el área del sistema en la paleta
+    const areaPaletteTemplate = $(go.Group, "Vertical",
       {
         background: "transparent",
         layerName: "Background",
         computesBoundsAfterDrag: true,
-        mouseDragEnter: null,
-        mouseDragLeave: null,
-        mouseDrop: null,
-        alignment: go.Spot.Center, // Alinea al centro
+        movable: false, // No se debe mover en la paleta
+        alignment: go.Spot.Center // 🔹 Asegura que esté centrado
       },
-      $(go.Shape, "Rectangle", {
-        fill: "white",
-        stroke: "black",
-        strokeWidth: 2,
-        minSize: new go.Size(100, 100)
-      }),
-      $(go.Panel, "Vertical", 
+      $(go.TextBlock,
         {
-          alignment: go.Spot.Center, // Alinea los elementos en el panel al centro
-          margin: new go.Margin(0, 0, 0, 0), // Elimina márgenes si es necesario
+          name: "GROUP_LABEL",
+          alignment: go.Spot.Center, // 🔹 Texto centrado
+          margin: 5,
+          editable: false, // No editable en la paleta
+          font: "bold 12pt sans-serif",
+          textAlign: "center"
         },
-        $(go.TextBlock, 
+        new go.Binding("text", "nombre")
+      ),
+      $(go.Panel, "Auto",
+        $(go.Shape, "Rectangle",
           {
-            alignment: go.Spot.Center, // Alinea el texto al centro
-            margin: 8,
-            editable: true,
-            font: "bold 12pt sans-serif"
-          },
-          new go.Binding("text", "nombre").makeTwoWay()),
-        $(go.Placeholder, { padding: 5, background: "transparent" })
+            fill: "#f4faff",
+            stroke: "#336699",
+            strokeWidth: 2,
+            minSize: new go.Size(150, 100) // Tamaño reducido en la paleta
+          }
+        ),
+        $(go.Placeholder, { padding: 10 }) // Espacio para los casos de uso
       )
     );
   
     const palette = $(go.Palette, this.paletteDiv.nativeElement, {
       nodeTemplateMap: this.getNodeTemplateMap(),
-      initialContentAlignment: go.Spot.Center,
-      contentAlignment: go.Spot.Center,
       groupTemplateMap: new go.Map<string, go.Group>().add("area", areaPaletteTemplate),
+      initialContentAlignment: go.Spot.Center, // 🔹 Asegura que todo esté alineado en el centro
+      contentAlignment: go.Spot.Center, // 🔹 Aplica alineación centrada general
       model: new go.GraphLinksModel([
         { category: 'actor', text: 'Actor' }, 
         { category: 'usecase', text: 'Caso de Uso' },
-        { category: 'area', isGroup: true }
+        { category: 'area', isGroup: true, nombre: 'Área del sistema' }
       ])
     });
   }
+  
   
 
   getNodeTemplateMap(): go.Map<string, go.Node> {
     const $ = go.GraphObject.make;
     const actorNode = $(go.Node, 'Vertical',
-      { locationSpot: go.Spot.Center, movable: true, deletable: true, fromLinkable: true, toLinkable: true, width: 100 },
+      {
+        locationSpot: go.Spot.Center,
+        movable: true,
+        deletable: true,
+        fromLinkable: true,
+        toLinkable: true,
+        width: 100
+      },
       new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
-      $(go.Shape, 'Circle', { width: 25, height: 25, fill: 'lightgray', stroke: 'black', strokeWidth: 2 }),
-      $(go.Panel, 'Vertical',
-        $(go.Panel, 'Horizontal',
-          $(go.Shape, { geometryString: "M0 0 L-20 0", stroke: "black", strokeWidth: 2 }),
-          $(go.Shape, { geometryString: "M0 0 L0 25", stroke: "black", strokeWidth: 2 }),
-          $(go.Shape, { geometryString: "M0 0 L20 0", stroke: "black", strokeWidth: 2 })
-        )
+    
+      // Imagen del actor
+      $(go.Picture,
+        {
+          source: "assets/icons/icono.jpg", // ← ruta de tu imagen
+          width: 64,
+          height: 64,
+          imageStretch: go.GraphObject.Uniform
+        }
       ),
-      $(go.Panel, 'Horizontal',
-        $(go.Shape, { geometryString: "M0 0 L-10 20", stroke: "black", strokeWidth: 2 }),
-        $(go.Shape, { geometryString: "M0 0 L10 20", stroke: "black", strokeWidth: 2 })
-      ),
-      $(go.TextBlock, { name: 'ACTOR_LABEL', margin: 5, editable: true, font: "bold 14pt sans-serif", textAlign: "center" },
+    
+      // Texto editable del actor
+      $(go.TextBlock,
+        {
+          name: 'ACTOR_LABEL',
+          margin: 5,
+          editable: true,
+          font: "bold 12pt sans-serif",
+          textAlign: "center",
+          textEdited: (textblock) => {
+            if (textblock.text.trim() === "") {
+              textblock.text = "-";
+            }
+          }
+        },
         new go.Binding("text").makeTwoWay()
       )
     );
+    
+    
   
     const usecaseNode = $(go.Node, 'Auto',
       { 
@@ -170,7 +246,12 @@ export class CUComponent {
         font: "bold 12pt sans-serif",
         wrap: go.TextBlock.WrapFit,
         textAlign: "center",
-        desiredSize: new go.Size(100, NaN)
+        desiredSize: new go.Size(100, NaN),
+        textEdited: (textblock) => {
+          if (textblock.text.trim() === "") {
+            textblock.text = "-";
+          }
+        }
       },
       new go.Binding('text').makeTwoWay()
       )
@@ -187,14 +268,14 @@ export class CUComponent {
 
   getGroupTemplate(): go.Group {
     const $ = go.GraphObject.make;
-    return $(go.Group, "Auto",
+    return $(go.Group, "Vertical",
       {
         isSubGraphExpanded: true,
         movable: true,
-        handlesDragDropForMembers: true,
         computesBoundsAfterDrag: true,
-        memberValidation: (group: any, node: any) => node.category === "usecase",
-        mouseDrop: function(e, grp) {
+        handlesDragDropForMembers: true,
+        memberValidation: (group, node) => node.category === "usecase",
+        mouseDrop: function (e, grp) {
           const diagram = grp.diagram;
           const tool = diagram!.currentTool as any;
           if (!tool.doingDragSelecting) {
@@ -209,33 +290,49 @@ export class CUComponent {
             });
             diagram!.model.commitTransaction("grouping");
           }
-        }
+        }        
       },
-      $(go.Shape, "Rectangle",
+  
+      // Título del área (más destacado y centrado)
+      $(go.TextBlock,
         {
-          name: "SHAPE",
-          fill: "white",
-          stroke: "black",
-          strokeWidth: 2,
-          minSize: new go.Size(200, 200)
+          name: "GROUP_LABEL",
+          alignment: go.Spot.Top,
+          margin: 8,
+          editable: true,
+          font: "bold 12pt sans-serif",
+          textEdited: (textblock) => {
+            if (textblock.text.trim() === "") {
+              textblock.text = "-";
+            }
+          }
         },
-        new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify)
+        new go.Binding("text", "nombre").makeTwoWay()
       ),
-      $(go.Panel, "Vertical",
-        $(go.TextBlock,
+      
+  
+      // Panel con el rectángulo y los casos de uso dentro
+      $(go.Panel, "Auto",
+        $(go.Shape, "Rectangle",
           {
-            alignment: go.Spot.Top,
-            margin: 8,
-            editable: true,
-            font: "bold 12pt sans-serif"
+            name: "SHAPE",
+            fill: "#f4faff",
+            stroke: "#336699",
+            strokeWidth: 2,
+            minSize: new go.Size(300, 200) // Ancho fijo, alto mínimo
           },
-          new go.Binding("text", "nombre").makeTwoWay()),
+          new go.Binding("desiredSize", "size", go.Size.parse).makeTwoWay(go.Size.stringify)
+        ),
         $(go.Placeholder,
-           { padding: 5, background: "transparent" }
+          {
+            padding: 20,
+            alignment: go.Spot.TopLeft,
+          }
         )
       )
     );
   }
+  
 
   getLinkTemplate(): go.Link {
     const $ = go.GraphObject.make;
