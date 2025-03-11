@@ -1,20 +1,29 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import * as go from 'gojs';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-cu',
-  imports: [],
   templateUrl: './cu.component.html',
-  styleUrl: './cu.component.css'
+  styleUrls: ['./cu.component.css'],
+  imports: [FormsModule, CommonModule],
+  standalone: true
 })
 export class CUComponent {
   @ViewChild('paletteDiv', { static: true }) paletteDiv!: ElementRef;
   @ViewChild('diagramDiv', { static: true }) diagramDiv!: ElementRef;
   public relationshipMode: boolean = false; 
   diagram!: go.Diagram;
+  currentVersion: string = '1.0';
+  versions: string[] = [];
+  projectId: string = '';
 
-  constructor(private toastr:ToastrService){}
+  constructor(private toastr:ToastrService){
+    this.projectId = sessionStorage.getItem('proyecto') || '';
+    this.loadVersions();
+  }
 
   ngAfterViewInit() {
     this.initDiagram();
@@ -53,9 +62,9 @@ export class CUComponent {
       let CU = false;
       e.subject.each((part: go.Node) => {
         if (part instanceof go.Node && part.category === "usecase" && part.containingGroup === null) {
-          alert("Los casos de uso deben colocarse dentro de un área.");
           // Remueve el nodo si no se encuentra dentro de un grupo (área)
           this.diagram.remove(part);
+          this.toastr.error("Los casos de uso deben colocarse dentro de un área.")
           CU = true
         }
       });
@@ -294,12 +303,54 @@ export class CUComponent {
     );
   }
 
+  loadVersions() {
+    // Cargar las versiones existentes del localStorage
+    const versionsKey = `DiagramVersions_${this.projectId}`;
+    const savedVersions = localStorage.getItem(versionsKey);
+    if (savedVersions) {
+      this.versions = JSON.parse(savedVersions);
+      // Si hay versiones, establecer la última como actual
+      if (this.versions.length > 0) {
+        this.currentVersion = this.versions[this.versions.length - 1];
+      }
+    } else {
+      // Si no hay versiones, inicializar con la versión 1
+      this.versions = ['1'];
+      this.currentVersion = '1';
+      localStorage.setItem(versionsKey, JSON.stringify(this.versions));
+    }
+  }
+
+  createNewVersion() {
+    // Crear una nueva versión incrementando el número
+    const lastVersion = parseInt(this.versions[this.versions.length - 1]);
+    const newVersion = (lastVersion + 1).toString();
+    this.currentVersion = newVersion;
+    this.versions.push(newVersion);
+    
+    // Guardar la lista actualizada de versiones
+    localStorage.setItem(`DiagramVersions_${this.projectId}`, JSON.stringify(this.versions));
+    
+    // Crear un nuevo diagrama vacío
+    this.diagram.model = new go.GraphLinksModel({
+      linkKeyProperty: "key"
+    });
+    
+    // Guardar el diagrama vacío
+    this.saveDiagram();
+    this.toastr.success(`Nueva versión ${this.currentVersion} creada`);
+  }
+
+  changeVersion(version: string) {
+    this.currentVersion = version;
+    this.loadDiagram(); // Cargar el diagrama de la versión seleccionada
+    this.toastr.info(`Versión ${version} cargada`);
+  }
+
   saveDiagram() {
-    // console.log("Se Guardó")
     if (this.diagram) {
       const json = this.diagram.model.toJson();
-      localStorage.setItem("DiagramCU"+sessionStorage.getItem("proyecto"), json);
-      // console.log("Diagrama guardado:", json);
+      localStorage.setItem(`DiagramCU_${this.projectId}_v${this.currentVersion}`, json);
     }
   }
 
@@ -310,15 +361,14 @@ export class CUComponent {
   }
 
   loadDiagram() {
-    const savedData = localStorage.getItem("DiagramCU"+sessionStorage.getItem("proyecto"));
+    const savedData = localStorage.getItem(`DiagramCU_${this.projectId}_v${this.currentVersion}`);
     if (savedData) {
       const model = go.Model.fromJson(savedData) as go.GraphLinksModel;
-      model.linkKeyProperty = "key";  // 🔹 Restaurar la clave de enlaces únicos
-      this.diagram.model = model;     // 🔹 Asignar el modelo al diagrama
-  
-      // 🔹 Volver a asignar el listener porque se pierde cuando cambiamos el modelo
+      model.linkKeyProperty = "key";
+      this.diagram.model = model;
+
       this.diagram.model.addChangedListener((e) => {
-        if (e.isTransactionFinished) {  
+        if (e.isTransactionFinished) {
           this.saveDiagram();
         }
       });

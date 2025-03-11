@@ -1,4 +1,47 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'ngx-toastr/toastr';
+
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
-/* Asegura que Font Awesome se cargue correctamente */
+
+:root {
+  --toastr-success: rgba(32, 187, 68, 0.85);
+  --toastr-error: rgba(220, 53, 69, 0.85);
+  --toastr-warning: rgba(255, 193, 7, 0.85);
+  --toastr-info: rgba(23, 162, 184, 0.85);
+}
+.toast-success {
+    background-color: var(--toastr-success) !important;
+  }
+  .toast-error {
+    background-color: var(--toastr-error) !important;
+  }
+  .toast-warning {
+    background-color: var(--toastr-warning) !important;
+  }
+  .toast-info {
+    background-color: var(--toastr-info) !important;
+  }
+
+/* Botón de cierre */
+.toast-close-button {
+  position: absolute !important;
+  top: 10px;
+  right: 12px;
+  font-size: 16px !important;
+  background: none !important;
+  border: none !important;
+  color: white !important;
+  opacity: 0.6 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+.toast-close-button:hover {
+  opacity: 1 !important;
+}
+
+/* Barra de progreso */
+.toast-progress {
+  height: 4px !important;
+  opacity: 0.6 !important;
+  border-radius: 0 0 8px 8px !important;
+}

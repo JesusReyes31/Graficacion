@@ -1,12 +1,37 @@
-<div style="display: flex; gap: 20px; margin-top: 10px;">
-  <div class="uml-palette-container">
-    <div #paletteDiv style="height: 500px;"></div>
-    <div class="toolbar">
-      <button (click)="toggleRelationshipMode()">
-        {{ relationshipMode ? 'Salir Modo Relación' : 'Modo Relación' }}
-      </button>
-    </div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 10px;">
+  <!-- Control de versiones -->
+  <div class="version-control" style="display: flex; gap: 10px; align-items: center;">
+    <select 
+      class="form-select" 
+      style="width: 200px;"
+      [(ngModel)]="currentVersion"
+      (change)="changeVersion($any($event.target).value)">
+      <option *ngFor="let version of versions" [value]="version">
+        Versión {{version}}
+      </option>
+    </select>
+    <button 
+      class="btn btn-primary"
+      (click)="createNewVersion()">
+      Nueva Versión
+    </button>
   </div>
-  <div #diagramDiv style="flex-grow: 1; height: auto; border: 1px solid rgb(204, 204, 204);"></div>
+
+  <!-- Contenedor principal -->
+  <div style="display: flex; gap: 20px;">
+    <div class="uml-palette-container">
+      <div #paletteDiv style="height: 500px; border: solid 1px rgba(147, 141, 141, 0.553);"></div>
+      <div class="toolbar">
+        <button 
+          class="btn" 
+          [class.btn-primary]="!relationshipMode"
+          [class.btn-success]="relationshipMode"
+          (click)="toggleRelationshipMode()">
+          {{relationshipMode ? 'Finalizar relación' : 'Crear relación'}}
+        </button>
+      </div>
+    </div>
+    <div #diagramDiv style="flex-grow: 1; height: 500px; border: solid 1px rgba(147, 141, 141, 0.553);"></div>
+  </div>
 </div>
   
