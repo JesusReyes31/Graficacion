@@ -1,5 +1,6 @@
 import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import * as go from 'gojs';
+import { Toast, ToastrService } from 'ngx-toastr';
 
 interface Parameter {
   paramName: string;
@@ -31,6 +32,7 @@ export class ClasesComponent implements AfterViewInit {
   @ViewChild('diagramDiv') diagramDiv!: ElementRef;
   @ViewChild('paletteDiv') paletteDiv!: ElementRef;
 
+  constructor(private toastr:ToastrService){}
   ngAfterViewInit(): void {
     this.initDiagram();
     this.initPalette();
@@ -121,11 +123,11 @@ export class ClasesComponent implements AfterViewInit {
       groupTemplateMap: this.createGroupTemplates($),  // Plantillas de grupos (para paquetes)
       initialContentAlignment: go.Spot.Center,
       model: new go.GraphLinksModel([
-        { category: "classOnly", name: "Clase" },
-        { category: "classWithAttributes", name: "Clase",
-          properties: [
-            { visibility: "-", name: "atributo", type: "tipo", default: null, scope: "instance" }
-          ]},
+        // { category: "classOnly", name: "Clase" },
+        // { category: "classWithAttributes", name: "Clase",
+        //   properties: [
+        //     { visibility: "-", name: "atributo", type: "tipo", default: null, scope: "instance" }
+        //   ]},
         { category: "classWithAttributesAndMethods", name: "Clase",
           properties: [
             { visibility: "-", name: "atributo", type: "tipo", default: null, scope: "instance" }
@@ -133,7 +135,7 @@ export class ClasesComponent implements AfterViewInit {
           methods: [
             { visibility: "+", name: "metodo", parameters: [{ paramName: "par", paramType: "tipo" }],type: "tipo" }
           ]},
-        { category: "package", name: "Paquete", isGroup: true }  // Ahora esto se usa para los grupos
+        // { category: "package", name: "Paquete", isGroup: true }  // Ahora esto se usa para los grupos
       ])
     });
   }
@@ -853,13 +855,13 @@ private createLink(relationshipType: string, symbol: string = "", dashed: boolea
 
   // Validación: asegúrate de que haya al menos dos nodos seleccionados para relaciones no reflexivas
   if (selectedNodes.length < 2 && relationshipType !== "Asociación Reflexiva") {
-    alert("Selecciona al menos dos clases para conectarlas.");
+    this.toastr.info("Selecciona al menos dos clases para conectarlas.");
     return;
   }
 
   // Validación para la Asociación Reflexiva, donde solo se selecciona un nodo
   if (selectedNodes.length < 1 && relationshipType === "Asociación Reflexiva") {
-    alert("Selecciona solo 1 clase para conectarla.");
+    this.toastr.info("Selecciona solo 1 clase para conectarla.");
     return;
   }
 
