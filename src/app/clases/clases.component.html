@@ -9,7 +9,16 @@
 
 </div>
 
+<div class="botones-multiplicidad">
+    <!-- Botones para las multiplicidades -->
+    <button (click)="setMultiplicity('1..1')">Multiplicidad 1..1</button>
+    <button (click)="setMultiplicity('1..*')">Multiplicidad 1..*</button>
+    <button (click)="setMultiplicity('0..1')">Multiplicidad 0..1</button>
+    <button (click)="setMultiplicity('0..*')">Multiplicidad 0..*</button>
+    <button (click)="setMultiplicity('N..M')">Multiplicidad N..M</button>
+</div>
+
 <div class="contenedor">
-    <div #paletteDiv style="width: 200px; height: 80vh;"></div>
-    <div #diagramDiv style="width: 90%; margin-left: 10px; height: 80vh;"></div>
+    <div #paletteDiv style="width: 250px; height: 80vh;"></div>
+    <div #diagramDiv style="width: 80%; margin-left: 10px; height: 80vh;"></div>
 </div>
