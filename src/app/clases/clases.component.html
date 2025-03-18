@@ -1,24 +1,109 @@
-<div class="botones-relaciones">
-    <button (click)="connectAssociation()">Asociación</button>
-    <button (click)="connectAggregation()">Agregación</button>
-    <button (click)="connectComposition()">Composición</button>
-    <button (click)="connectGeneralization()">Generalización</button>
-    <button (click)="connectDependency()">Dependencia</button>
-    <button (click)="connectRealization()">Realización</button>
-    <button (click)="connectAssociationReflexive()">Asociación Reflexiva</button>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 10px;">
+    <!-- Control de versiones -->
+  <div class="version-control">
+    <div class="version-title">
+      <i class="fas fa-code-branch"></i>
+      <span>Control de Versiones</span>
+    </div>
+    <div class="version-actions">
+      <select 
+        class="form-select version-select" 
+        [(ngModel)]="currentVersion"
+        (change)="changeVersion($any($event.target).value)">
+        <option *ngFor="let version of versions" [value]="version">
+          Versión {{version}}
+        </option>
+      </select>
+      <button 
+        class="btn version-btn"
+        (click)="createNewVersion()">
+        <i class="fas fa-plus"></i> Nueva Versión
+      </button>
+    </div>
+  </div>
+  <!-- Barra de herramientas de relaciones -->
+  <div class="relationship-toolbar">
+    <button 
+      class="btn relationship-btn" 
+      (click)="connectAssociation()"
+      title="Asociación: Conecta clases con una relación simple">
+      <i class="fas fa-link"></i> Asociación
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      (click)="connectAggregation()"
+      title="Agregación: Relación todo-parte donde las partes pueden existir independientemente">
+      <i class="fas fa-diamond"></i> Agregación
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      (click)="connectComposition()"
+      title="Composición: Relación todo-parte donde las partes no pueden existir sin el todo">
+      <i class="fas fa-cube"></i> Composición
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      (click)="connectGeneralization()"
+      title="Generalización: Relación de herencia entre clases">
+      <i class="fas fa-sitemap"></i> Generalización
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      (click)="connectDependency()"
+      title="Dependencia: Una clase depende de otra">
+      <i class="fas fa-arrow-right"></i> Dependencia
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      (click)="connectRealization()"
+      title="Realización: Implementación de una interfaz">
+      <i class="fas fa-code"></i> Realización
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      (click)="connectAssociationReflexive()"
+      title="Asociación Reflexiva: Una clase se relaciona consigo misma">
+      <i class="fas fa-sync"></i> Asoc. Reflexiva
+    </button>
+  </div>
 
-</div>
+  <!-- Barra de herramientas de multiplicidad -->
+  <div class="relationship-toolbar multiplicity-toolbar">
+    <button 
+      class="btn multiplicity-btn" 
+      (click)="setMultiplicity('1..1')"
+      title="Exactamente uno">
+      <i class="fas fa-equals"></i> 1..1
+    </button>
+    <button 
+      class="btn multiplicity-btn" 
+      (click)="setMultiplicity('1..*')"
+      title="Uno o muchos">
+      <i class="fas fa-asterisk"></i> 1..*
+    </button>
+    <button 
+      class="btn multiplicity-btn" 
+      (click)="setMultiplicity('0..1')"
+      title="Cero o uno">
+      <i class="fas fa-question"></i> 0..1
+    </button>
+    <button 
+      class="btn multiplicity-btn" 
+      (click)="setMultiplicity('0..*')"
+      title="Cero o muchos">
+      <i class="fas fa-star"></i> 0..*
+    </button>
+    <button 
+      class="btn multiplicity-btn" 
+      (click)="setMultiplicity('N..M')"
+      title="N a M">
+      <i class="fas fa-exchange-alt"></i> N..M
+    </button>
+  </div>
 
-<div class="botones-multiplicidad">
-    <!-- Botones para las multiplicidades -->
-    <button (click)="setMultiplicity('1..1')">Multiplicidad 1..1</button>
-    <button (click)="setMultiplicity('1..*')">Multiplicidad 1..*</button>
-    <button (click)="setMultiplicity('0..1')">Multiplicidad 0..1</button>
-    <button (click)="setMultiplicity('0..*')">Multiplicidad 0..*</button>
-    <button (click)="setMultiplicity('N..M')">Multiplicidad N..M</button>
-</div>
-
-<div class="contenedor">
-    <div #paletteDiv style="width: 250px; height: 80vh;"></div>
-    <div #diagramDiv style="width: 80%; margin-left: 10px; height: 80vh;"></div>
+  <!-- Contenedor principal -->
+  <div class="contenedor">
+    <div #paletteDiv style="width: 250px; height: 60vh;"></div>
+    <div #diagramDiv style="width: 80%; margin-left: 10px; height: 60vh;"></div>
+  </div>
 </div>

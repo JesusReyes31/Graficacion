@@ -12,7 +12,7 @@
 /* Sidebar - Paleta de elementos */
 .uml-palette-container {
   width: 250px;
-  height: 75vh;
+  /* height: 75vh; */
   background: #f9fafb;
   border-radius: 12px;
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
@@ -58,4 +58,48 @@
 .toolbar button:hover {
   background-color: #0284c7;
   transform: scale(1.05);
+}
+
+/* Barra de herramientas de relaciones */
+.relationship-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background-color: #f0f4f8;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.relationship-btn {
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  padding: 8px 15px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.relationship-btn:hover {
+  background-color: #c7d2fe;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.relationship-btn.active {
+  background-color: #4338ca;
+  color: white;
+  box-shadow: 0 2px 5px rgba(67, 56, 202, 0.3);
+}
+
+.relationship-btn i {
+  font-size: 14px;
 }

@@ -144,8 +144,8 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
 
     // Modelo de la paleta con claves únicas
     this.myPalette.model = new go.GraphLinksModel([
-      { key: 'PaletteNode1', text: 'Paquete', isGroup: false },
-      { key: 'PaletteGroup1', text: 'Grupo', isGroup: true }
+      { key: 'PaletteNode1', text: 'Nodo', isGroup: false },
+      { key: 'PaletteGroup1', text: 'Paquete', isGroup: true }
     ]);
   }
 

@@ -1,19 +1,62 @@
 <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px;">
   <!-- Control de versiones -->
-  <div class="version-control" style="display: flex; gap: 10px; align-items: center;">
-    <select 
-      class="form-select" 
-      style="width: 200px;"
-      [(ngModel)]="currentVersion"
-      (change)="changeVersion($any($event.target).value)">
-      <option *ngFor="let version of versions" [value]="version">
-        Versión {{version}}
-      </option>
-    </select>
+  <div class="version-control">
+    <div class="version-title">
+      <i class="fas fa-code-branch"></i>
+      <span>Control de Versiones</span>
+    </div>
+    <div class="version-actions">
+      <select 
+        class="form-select version-select" 
+        [(ngModel)]="currentVersion"
+        (change)="changeVersion($any($event.target).value)">
+        <option *ngFor="let version of versions" [value]="version">
+          Versión {{version}}
+        </option>
+      </select>
+      <button 
+        class="btn version-btn"
+        (click)="createNewVersion()">
+        <i class="fas fa-plus"></i> Nueva Versión
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de herramientas de relaciones -->
+  <div class="relationship-toolbar">
     <button 
-      class="btn btn-primary"
-      (click)="createNewVersion()">
-      Nueva Versión
+      class="btn relationship-btn" 
+      [class.active]="relationshipType === 'association'"
+      (click)="setRelationshipMode('association')"
+      title="Asociación: Conecta actores con casos de uso">
+      <i class="fas fa-link"></i> Asociación
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      [class.active]="relationshipType === 'include'"
+      (click)="setRelationshipMode('include')"
+      title="Include: Conecta casos de uso con otros casos de uso">
+      <i class="fas fa-plus-circle"></i> Include
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      [class.active]="relationshipType === 'extend'"
+      (click)="setRelationshipMode('extend')"
+      title="Extend: Conecta casos de uso con otros casos de uso">
+      <i class="fas fa-external-link-alt"></i> Extend
+    </button>
+    <button 
+      class="btn relationship-btn" 
+      [class.active]="relationshipType === 'generalization'"
+      (click)="setRelationshipMode('generalization')"
+      title="Generalización: Conecta actores con actores o casos de uso con casos de uso">
+      <i class="fas fa-sitemap"></i> Generalización/Herencia
+    </button>
+    <button 
+      class="btn btn-secondary" 
+      (click)="disableRelationshipMode()"
+      *ngIf="relationshipMode">
+      <i class="fas fa-times"></i> Cancelar
     </button>
   </div>
 
@@ -21,15 +64,6 @@
   <div style="display: flex; gap: 20px;">
     <div class="uml-palette-container">
       <div #paletteDiv style="height: 500px; border: solid 1px rgba(147, 141, 141, 0.553);"></div>
-      <div class="toolbar">
-        <button 
-          class="btn" 
-          [class.btn-primary]="!relationshipMode"
-          [class.btn-success]="relationshipMode"
-          (click)="toggleRelationshipMode()">
-          {{relationshipMode ? 'Finalizar relación' : 'Crear relación'}}
-        </button>
-      </div>
     </div>
     <div #diagramDiv style="flex-grow: 1; height: 500px; border: solid 1px rgba(147, 141, 141, 0.553);"></div>
   </div>
