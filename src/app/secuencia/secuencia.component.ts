@@ -1,285 +1,193 @@
-import { Component, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, AfterViewInit, ViewChild } from '@angular/core';
 import * as go from 'gojs';
 
-const $ = go.GraphObject.make;
-
-interface Mensaje {
-  origen: string;
-  destino: string;
-  mensaje: string;
-  tipo: 'sincrono' | 'asincrono' | 'respuesta';
-  orden: number;
-}
-
-interface Participante {
-  nombre: string;
-  tipo: 'actor' | 'objeto';
-  activaciones: { inicio: number; fin: number; }[];
-}
-
 @Component({
-  selector: 'app-secuencia',
-  templateUrl: './secuencia.component.html',
-  styleUrls: ['./secuencia.component.css'],
+  selector: 'app-uml-secuencias',
   standalone: true,
-  imports: [CommonModule, FormsModule]
+  templateUrl: './secuencia.component.html',
+  styleUrls: ['./secuencia.component.css']
 })
-export class SecuenciaComponent implements OnInit, AfterViewInit {
+export class SecuenciaComponent implements AfterViewInit {
   @ViewChild('diagramDiv') diagramDiv!: ElementRef;
-  
-  public diagram: go.Diagram | null = null;
-  participantes: Participante[] = [];
-  mensajes: Mensaje[] = [];
-  
-  nuevoParticipante: Participante = {
-    nombre: '',
-    tipo: 'objeto',
-    activaciones: []
-  };
-
-  nuevoMensaje: Mensaje = {
-    origen: '',
-    destino: '',
-    mensaje: '',
-    tipo: 'sincrono',
-    orden: 0
-  };
-
-  private MENSAJE_SPACING = 50;
-  private PARTICIPANTE_WIDTH = 120;
-  private PARTICIPANTE_HEIGHT = 40;
-  private LIFELINE_LENGTH = 1000;
-
-  ngOnInit() {}
+  @ViewChild('paletteDiv') paletteDiv!: ElementRef;
+  private myDiagram!: go.Diagram;
+  private myPalette!: go.Palette;
+  diagram!: go.Diagram;
 
   ngAfterViewInit() {
-    if (this.diagramDiv) {
-      this.initDiagram();
-      this.actualizarDiagrama();
-    }
+    this.initDiagram();
+    this.initPalette();
   }
 
-  private initDiagram() {
-    this.diagram = new go.Diagram(this.diagramDiv.nativeElement, {
+  initDiagram() {
+    const $ = go.GraphObject.make;
+
+    this.myDiagram = $(go.Diagram, this.diagramDiv.nativeElement, {
+      allowCopy: false,
       "undoManager.isEnabled": true,
-      "allowMove": false,
-      "allowDelete": false,
-      "allowHorizontalScroll": true,
-      "allowVerticalScroll": true,
-      initialContentAlignment: go.Spot.TopLeft,
-      layout: $(go.GridLayout, {
-        wrappingWidth: Infinity,
-        spacing: new go.Size(200, 50),
-        alignment: go.GridLayout.Position
-      })
+      "draggingTool.dragsLink": true,
+      "linkingTool.isUnconnectedLinkValid": true,
+      "linkingTool.portGravity": 20,
+      "commandHandler.archetypeGroupData": { isGroup: true, text: "New Group" }
     });
 
-    this.diagram.nodeTemplate =
-      $(go.Node, "Position",
-        {
-          selectable: false,
-          movable: false,
-          locationSpot: go.Spot.Top
+    // Plantilla de los actores principales (grupos)
+    this.myDiagram.groupTemplate = $(
+      go.Group, "Vertical",
+      {
+        locationSpot: go.Spot.Top,
+        selectionObjectName: "HEADER",
+        computesBoundsAfterDrag: true,
+        handlesDragDropForMembers: true,
+        groupable: true,
+        mouseDrop: function (e, grp) {
+          const ok = grp instanceof go.Group && grp.diagram && grp.canAddMembers(grp.diagram.selection);
+          if (!ok) return;
+          e.diagram.selection.each(part => {
+            if (part instanceof go.Node) part.containingGroup = grp;
+          });
         },
-        $(go.Panel, "Auto",
-          $(go.Shape, "Rectangle",
-            {
-              fill: "white",
-              stroke: "black",
-              strokeWidth: 1,
-              width: this.PARTICIPANTE_WIDTH,
-              height: this.PARTICIPANTE_HEIGHT
-            }
-          ),
-          $(go.TextBlock,
-            {
-              margin: 5,
-              textAlign: "center",
-              font: "12px Arial",
-              wrap: go.TextBlock.WrapFit
-            },
-            new go.Binding("text")
-          )
-        ),
-        $(go.Shape,
+        fromLinkable: false,
+        toLinkable: false
+      },
+      new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+      $(
+        go.Panel, "Auto", { name: "HEADER" },
+        $(go.Shape, "Rectangle", { fill: "#bbdefb", stroke: null }),
+        $(go.TextBlock, { editable:true, margin: 5, font: "10pt sans-serif" }, new go.Binding("text"))
+      ),
+      $(
+        go.Shape,
+        { figure: "LineV", stroke: "gray", strokeDashArray: [3, 3], width: 1 },
+        new go.Binding("height", "duration")
+      )
+    );
+
+    // Plantilla para los nodos de acción
+    this.myDiagram.nodeTemplate = $(
+      go.Node, "Auto",
+      {
+        locationSpot: go.Spot.Top,
+        movable: true,
+        groupable: true,
+        dragComputation: (node: go.Part, pt: go.Point) => {
+          return node.containingGroup ? new go.Point(node.containingGroup.location.x, pt.y) : pt;
+        }
+      },
+      new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
+      new go.Binding("group", "group"),
+      $(
+        go.Panel, "Vertical",
+        // Punto superior para mensajes normales
+        $(go.Shape, "Circle",
           {
-            geometryString: `M ${this.PARTICIPANTE_WIDTH/2} ${this.PARTICIPANTE_HEIGHT} V ${this.LIFELINE_LENGTH}`,
-            stroke: "black",
-            strokeDashArray: [5, 5],
-            strokeWidth: 1
+            width: 6, height: 6, fill: "blue", strokeWidth: 0, cursor: "pointer",
+            portId: "top",
+            fromLinkable: true, toLinkable: true,
+            fromSpot: go.Spot.Top, toSpot: go.Spot.Top
           }
         ),
-        $(go.Panel, "Position",
+        // Rectángulo de activación
+        $(go.Shape, "Rectangle", { fill: "white", stroke: "black", width: 12, height: 30 }),
+        $(go.Shape, "Rectangle", { fill: "black", width: 12, height: 3 }),
+        // Punto inferior para mensajes de respuesta
+        $(go.Shape, "Circle",
           {
-            name: "ACTIVATIONS",
-            alignment: go.Spot.Center
-          },
-          new go.Binding("itemArray", "activaciones"),
-          {
-            itemTemplate:
-              $(go.Panel, "Auto",
-                new go.Binding("position", "", (data) => new go.Point(this.PARTICIPANTE_WIDTH/2 - 5, data.inicio)),
-                $(go.Shape, "Rectangle",
-                  {
-                    fill: "white",
-                    stroke: "black",
-                    strokeWidth: 1,
-                    width: 10
-                  },
-                  new go.Binding("height", "", (data) => data.fin - data.inicio)
-                )
-              )
+            width: 6, height: 6, fill: "red", strokeWidth: 0, cursor: "pointer",
+            portId: "bottom",
+            fromLinkable: true, toLinkable: true,
+            fromSpot: go.Spot.Bottom, toSpot: go.Spot.Bottom
           }
         )
-      );
-
-    this.diagram.linkTemplate =
-      $(go.Link,
-        {
-          routing: go.Link.Normal,
-          curve: go.Link.None,
-          adjusting: go.Link.None,
-          fromEndSegmentLength: 50,
-          toEndSegmentLength: 50
-        },
-        $(go.Shape,
-          {
-            stroke: "black",
-            strokeWidth: 1
-          },
-          new go.Binding("strokeDashArray", "tipo", t => t === 'respuesta' ? [4, 4] : null)
-        ),
-        $(go.Shape,
-          {
-            scale: 0.8
-          },
-          new go.Binding("toArrow", "tipo", t => t === 'asincrono' ? "OpenTriangle" : "Triangle"),
-          new go.Binding("fill", "tipo", t => t === 'respuesta' ? "white" : "black"),
-          new go.Binding("stroke", "tipo", t => "black")
-        ),
-        $(go.TextBlock,
-          {
-            segmentOffset: new go.Point(0, -10),
-            segmentOrientation: go.Link.OrientUpright,
-            background: "white",
-            font: "11px Arial"
-          },
-          new go.Binding("text", "", (data) => {
-            return `${data.orden + 1}: ${data.text}`;
-          })
-        ),
-        new go.Binding("points").makeTwoWay()
-      );
-  }
-
-  agregarParticipante() {
-    if (this.nuevoParticipante.nombre.trim()) {
-      this.participantes.push({...this.nuevoParticipante});
-      this.nuevoParticipante = {
-        nombre: '',
-        tipo: 'objeto',
-        activaciones: []
-      };
-      this.actualizarDiagrama();
-    }
-  }
-
-  eliminarParticipante(index: number) {
-    const participanteEliminado = this.participantes[index].nombre;
-    this.participantes.splice(index, 1);
-    this.mensajes = this.mensajes.filter(m => 
-      m.origen !== participanteEliminado && 
-      m.destino !== participanteEliminado
+      )
     );
-    this.actualizarDiagrama();
-  }
 
-  agregarMensaje() {
-    if (this.nuevoMensaje.origen && 
-        this.nuevoMensaje.destino && 
-        this.nuevoMensaje.mensaje.trim()) {
-      const nuevoMensaje = {
-        ...this.nuevoMensaje,
-        orden: this.mensajes.length
-      };
-      this.mensajes.push(nuevoMensaje);
+    // Plantilla para las conexiones (flechas) con texto editable y placeholder
+    this.myDiagram.linkTemplate = $(
+      go.Link,
+      { 
+        curve: go.Link.JumpOver, 
+        toShortLength: 2, 
+        relinkableFrom: true, 
+        relinkableTo: true,
+        routing: go.Link.Orthogonal
+      },
+      new go.Binding("routing", "isReturn", function(v) {
+        return v ? go.Link.Orthogonal : go.Link.Normal;
+      }),
+      // Binding para determinar los puertos de origen y destino basado en si es un mensaje de respuesta
+      new go.Binding("fromPortId", "isReturn", function(v) {
+        return v ? "bottom" : "top";
+      }),
+      new go.Binding("toPortId", "isReturn", function(v) {
+        return v ? "bottom" : "top";
+      }),
+      $(go.Shape, { 
+        stroke: "black"
+      },
+      new go.Binding("strokeDashArray", "isReturn", function(v) {
+        return v ? [3, 3] : null;
+      })),
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black" }),
+      $(go.Panel, "Auto",
+        $(go.Shape, "Rectangle", { fill: "white", stroke: "black" }),
+        $(go.TextBlock, 'escribe aqui...',
+          {
+            font: "9pt sans-serif",
+            margin: 2,
+            editable: true,
+            segmentIndex: 0,
+            segmentOffset: new go.Point(0, -20)
+          },
+          new go.Binding("text", "text").makeTwoWay()
+        )
+      )
+    );
 
-      // Agregar activación solo para el objeto destino en mensajes síncronos
-      if (nuevoMensaje.tipo === 'sincrono') {
-        const destinoParticipante = this.participantes.find(p => p.nombre === nuevoMensaje.destino);
-        if (destinoParticipante) {
-          const inicio = (nuevoMensaje.orden + 1) * this.MENSAJE_SPACING + this.PARTICIPANTE_HEIGHT;
-          const fin = inicio + this.MENSAJE_SPACING;
-          destinoParticipante.activaciones.push({ inicio, fin });
+    // Evento para detectar cuando se crea un nuevo enlace y determinar si es de respuesta
+    this.myDiagram.addDiagramListener("LinkDrawn", function(e) {
+      const link = e.subject;
+      if (link instanceof go.Link) {
+        const fromNode = link.fromNode;
+        const toNode = link.toNode;
+        if (fromNode && toNode) {
+          // Si el nodo de origen está a la derecha del nodo de destino, es un mensaje de respuesta
+          const isReturn = fromNode.location.x > toNode.location.x;
+          e.diagram.model.setDataProperty(link.data, "isReturn", isReturn);
         }
       }
+    });
 
-      this.nuevoMensaje = {
-        origen: '',
-        destino: '',
-        mensaje: '',
-        tipo: 'sincrono',
-        orden: 0
-      };
-      this.actualizarDiagrama();
-    }
-  }
-
-  eliminarMensaje(index: number) {
-    // Eliminar las activaciones correspondientes
-    const mensaje = this.mensajes[index];
-    if (mensaje.tipo === 'sincrono') {
-      const destinoParticipante = this.participantes.find(p => p.nombre === mensaje.destino);
-      if (destinoParticipante) {
-        const inicio = (mensaje.orden + 1) * this.MENSAJE_SPACING + this.PARTICIPANTE_HEIGHT;
-        destinoParticipante.activaciones = destinoParticipante.activaciones.filter(
-          a => a.inicio !== inicio
-        );
+    // Evento para evitar que los enlaces queden vacíos después de editarse
+    this.myDiagram.addDiagramListener("TextEdited", (e) => {
+      const tb = e.subject as go.TextBlock;
+      if (tb && tb.text.trim() === "") {
+        this.myDiagram.model.setDataProperty(tb.part!.data, "text", "Escribe aquí...");
       }
-    }
-
-    this.mensajes.splice(index, 1);
-    // Actualizar el orden de los mensajes restantes y sus activaciones
-    this.mensajes.forEach((mensaje, i) => {
-      mensaje.orden = i;
     });
-    this.actualizarDiagrama();
+
+    this.loadModel();
   }
 
-  private actualizarDiagrama() {
-    if (!this.diagram) return;
+  initPalette() {
+    const $ = go.GraphObject.make;
 
-    const nodeDataArray = this.participantes.map((p, i) => ({
-      key: p.nombre,
-      text: p.nombre,
-      loc: `${i * 200} 0`,
-      activaciones: p.activaciones
-    }));
-
-    const linkDataArray = this.mensajes.map((m, i) => {
-      // Encontrar los índices de los participantes origen y destino
-      const fromIndex = this.participantes.findIndex(p => p.nombre === m.origen);
-      const toIndex = this.participantes.findIndex(p => p.nombre === m.destino);
-      
-      const y = (i + 1) * this.MENSAJE_SPACING + this.PARTICIPANTE_HEIGHT;
-      const fromX = fromIndex * 200 + this.PARTICIPANTE_WIDTH/2;
-      const toX = toIndex * 200 + this.PARTICIPANTE_WIDTH/2;
-
-      return {
-        from: m.origen,
-        to: m.destino,
-        text: m.mensaje,
-        tipo: m.tipo,
-        orden: i,
-        points: [
-          new go.Point(fromX, y),
-          new go.Point(toX, y)
-        ]
-      };
+    this.myPalette = $(go.Palette, this.paletteDiv.nativeElement, {
+      nodeTemplateMap: this.myDiagram.nodeTemplateMap,
+      model: new go.GraphLinksModel([
+        { key: "Lifeline", text: "Lifeline", isGroup: true, duration: 300 },
+        { key: "Action", text: "Action", isGroup: false, groupable: true }
+      ])
     });
+  }
 
-    this.diagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
+  loadModel() {
+    const modelData = {
+      class: "go.GraphLinksModel",
+      nodeDataArray: [],
+      linkDataArray: []
+    };
+
+    this.myDiagram.model = go.Model.fromJson(modelData);
   }
 }
