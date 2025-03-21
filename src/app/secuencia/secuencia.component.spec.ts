@@ -1,18 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { SecuenciaComponent } from './secuencia.component';
 
-import { UmlSecuenciasComponent } from './secuencia.component';
-
-describe('UmlSecuenciasComponent', () => {
-  let component: UmlSecuenciasComponent;
-  let fixture: ComponentFixture<UmlSecuenciasComponent>;
+describe('SecuenciaComponent', () => {
+  let component: SecuenciaComponent;
+  let fixture: ComponentFixture<SecuenciaComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UmlSecuenciasComponent]
+      imports: [SecuenciaComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(UmlSecuenciasComponent);
+    fixture = TestBed.createComponent(SecuenciaComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

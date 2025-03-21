@@ -84,36 +84,49 @@ export class SecuenciaComponent implements AfterViewInit {
             width: 6, height: 6, fill: "blue", strokeWidth: 0, cursor: "pointer",
             portId: "top",
             fromLinkable: true, toLinkable: true,
-            fromSpot: go.Spot.Top, toSpot: go.Spot.Top
+            fromSpot: go.Spot.Right, toSpot: go.Spot.Left,
+            alignment: go.Spot.Right
           }
         ),
+        $(go.Shape, "Rectangle", { fill: "transparent", stroke: "transparent", width: 12, height: 0 }), // Sin espacio
         // Rectángulo de activación
         $(go.Shape, "Rectangle", { fill: "white", stroke: "black", width: 12, height: 30 }),
         $(go.Shape, "Rectangle", { fill: "black", width: 12, height: 3 }),
+        $(go.Shape, "Rectangle", { fill: "transparent", stroke: "transparent", width: 12, height: 0 }), // Sin espacio
         // Punto inferior para mensajes de respuesta
         $(go.Shape, "Circle",
           {
             width: 6, height: 6, fill: "red", strokeWidth: 0, cursor: "pointer",
             portId: "bottom",
             fromLinkable: true, toLinkable: true,
-            fromSpot: go.Spot.Bottom, toSpot: go.Spot.Bottom
+            fromSpot: go.Spot.Right, toSpot: go.Spot.Left,
+            alignment: go.Spot.Right
           }
         )
       )
     );
 
-    // Plantilla para las conexiones (flechas) con texto editable y placeholder
+    // Plantilla para las conexiones (flechas)
     this.myDiagram.linkTemplate = $(
       go.Link,
       { 
-        curve: go.Link.JumpOver, 
-        toShortLength: 2, 
+        curve: go.Link.None, 
+        toShortLength: 0,
+        fromShortLength: 0,
         relinkableFrom: true, 
         relinkableTo: true,
-        routing: go.Link.Orthogonal
+        routing: go.Link.Normal,
+        adjusting: go.Link.None,
+        corner: 0
       },
       new go.Binding("routing", "isReturn", function(v) {
-        return v ? go.Link.Orthogonal : go.Link.Normal;
+        return v ? go.Link.Normal : go.Link.Normal;
+      }),
+      new go.Binding("fromSpot", "isReturn", function(v) {
+        return v ? go.Spot.Left : go.Spot.Right;
+      }),
+      new go.Binding("toSpot", "isReturn", function(v) {
+        return v ? go.Spot.Right : go.Spot.Left;
       }),
       // Binding para determinar los puertos de origen y destino basado en si es un mensaje de respuesta
       new go.Binding("fromPortId", "isReturn", function(v) {
@@ -123,24 +136,23 @@ export class SecuenciaComponent implements AfterViewInit {
         return v ? "bottom" : "top";
       }),
       $(go.Shape, { 
-        stroke: "black"
+        stroke: "black",
+        strokeWidth: 1.5
       },
       new go.Binding("strokeDashArray", "isReturn", function(v) {
         return v ? [3, 3] : null;
       })),
-      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black" }),
-      $(go.Panel, "Auto",
-        $(go.Shape, "Rectangle", { fill: "white", stroke: "black" }),
-        $(go.TextBlock, 'escribe aqui...',
-          {
-            font: "9pt sans-serif",
-            margin: 2,
-            editable: true,
-            segmentIndex: 0,
-            segmentOffset: new go.Point(0, -20)
-          },
-          new go.Binding("text", "text").makeTwoWay()
-        )
+      $(go.Shape, { toArrow: "OpenTriangle", stroke: "black", scale: 1 }),
+      $(go.TextBlock, 'escribe aqui...',
+        {
+          font: "9pt sans-serif",
+          segmentOffset: new go.Point(0, -10),
+          segmentOrientation: go.Link.OrientUpright,
+          background: "transparent",
+          margin: 5,
+          editable: true
+        },
+        new go.Binding("text", "text").makeTwoWay()
       )
     );
 
@@ -184,8 +196,24 @@ export class SecuenciaComponent implements AfterViewInit {
   loadModel() {
     const modelData = {
       class: "go.GraphLinksModel",
-      nodeDataArray: [],
-      linkDataArray: []
+      nodeDataArray: [
+        { key: "grupo1", text: "Objeto 1", isGroup: true, duration: 300, loc: "0 0" },
+        { key: "grupo2", text: "Objeto 2", isGroup: true, duration: 300, loc: "200 0" },
+        { key: "act1", group: "grupo1", loc: "0 50" },
+        { key: "act2", group: "grupo2", loc: "200 50" }
+      ],
+      linkDataArray: [
+        { 
+          from: "act1", to: "act2", 
+          text: "1: Mensaje()", 
+          isReturn: false 
+        },
+        { 
+          from: "act2", to: "act1", 
+          text: "2: Respuesta", 
+          isReturn: true 
+        }
+      ]
     };
 
     this.myDiagram.model = go.Model.fromJson(modelData);
