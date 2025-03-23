@@ -22,9 +22,7 @@ export class ComponentesComponent implements OnInit {
 
   ngOnInit() {
     this.initDiagram();
-    this.addPaletteElements();
-    this.enableLinkingTool();
-    
+    this.addPaletteElements();    
   }
   constructor(private toastr: ToastrService) {
     this.projectId = sessionStorage.getItem('proyecto') || '';
@@ -57,8 +55,6 @@ export class ComponentesComponent implements OnInit {
       $(go.Node, "Auto",
         {
           selectionAdorned: true,
-          fromLinkable: true,
-          toLinkable: true,
           movable: true,
           resizable: true,
           height: 70,
@@ -102,7 +98,6 @@ export class ComponentesComponent implements OnInit {
           { 
             locationSpot: go.Spot.Center,
             movable: true,
-            toLinkable: true,  // Permitir que se conecte algo a él
             zOrder: 1,  // Mantenerlo debajo del círculo
             mouseDrop: (e, obj) => this.attachCircleToSemiCircle(obj as go.Part) // Cuando se suelte un nodo encima
           },
@@ -133,42 +128,109 @@ export class ComponentesComponent implements OnInit {
         $(go.Shape,
           { strokeWidth: 2, stroke: "#000000" })
       );
-      this.diagram.model.addChangedListener(e => { 
-        if (e.isTransactionFinished) this.saveDiagram(); 
-      });
+      this.diagram.model.addChangedListener((e) => {
+        if (e.isTransactionFinished) {
+          this.saveDiagram();
+          // Revisar si el grupo debe ser eliminado
+          if (e.change === go.ChangedEvent.Remove && e.object instanceof go.Node) {
+            this.checkAndRemoveGroup(e.object);
+          }
+        }
+    });
   }
+  private checkAndRemoveGroup(removedNode: go.Node) {
+    const groupKey = removedNode.data.group;
+    if (!groupKey) return; // Si no tiene grupo, no hacer nada
+    
+    // Buscar otros miembros del grupo
+    const groupMembers = this.diagram.model.nodeDataArray.filter((n) => n['group'] === groupKey);
+    
+    // Si solo queda un miembro en el grupo, eliminar el grupo
+    if (groupMembers.length === 1) {
+      // Buscar el nodo del grupo
+      const groupNode = this.diagram.findNodeForData({ key: groupKey });
+      if (groupNode) {
+        // Empezamos la transacción para eliminar el grupo
+        this.diagram.startTransaction("Remove Group");
+        // Eliminar el grupo
+        this.diagram.model.removeNodeData(groupNode.data);
+        // Finalizamos la transacción
+        this.diagram.commitTransaction("Remove Group");
+      }
+    }
+  }
+  
+  
   private attachCircleToSemiCircle(semiCircleNode: go.Part) {
-    if (!(semiCircleNode instanceof go.Node)) return; // Validar nodo correcto
+    if (!(semiCircleNode instanceof go.Node)) return;
   
     const circleNode = this.diagram.selection.first();
-    if (!(circleNode instanceof go.Node)) return; // Validar que hay un nodo seleccionado
+    if (!(circleNode instanceof go.Node)) return;
+  
+    // Comprobar si el nodo que estamos intentando conectar es un semicírculo
+    if (semiCircleNode.category === "semiCircle" && circleNode.category === "semiCircle") {
+      this.toastr.warning("No se pueden conectar dos interfaces ofrecidas.");
+      return;
+    }
+  
+    // Obtener los rectKey de ambos nodos
+    const semiCircleRectKey = semiCircleNode.data.rectKey; // Propiedad rectKey del semi-círculo
+    const circleNodeRectKey = circleNode.data.rectKey; // Propiedad rectKey del círculo
+  
+    // Validar que ambos nodos no pertenezcan al mismo rectángulo
+    if (semiCircleRectKey === circleNodeRectKey) {
+      this.toastr.warning("Ambos nodos deben provenir de distintos componentes.");
+      return;  // No se conecta si ambos provienen del mismo rectángulo
+    }
   
     this.diagram.startTransaction("Attach Circle to SemiCircle");
   
-    // Ajustar la posición del círculo para que quede justo encima del semicírculo
-    const semiCirclePos = semiCircleNode.location.copy();
-    circleNode.move(new go.Point(semiCirclePos.x, semiCirclePos.y)); 
+    const existingGroupKey = semiCircleNode.data.group;
   
-    // Crear un grupo si aún no existe
-    if (!semiCircleNode.data.group) {
+    // Verificar si ya hay un grupo asignado
+    if (existingGroupKey) {
+      const groupMembers = this.diagram.model.nodeDataArray.filter(n => n['group'] === existingGroupKey);
+  
+      // Validar que no haya más de dos nodos en el grupo
+      if (groupMembers.length >= 2) {
+        this.toastr.warning("Un grupo solo puede tener dos elementos.");
+        return;
+      }
+    }
+  
+    // Crear grupo si no existe
+    if (!existingGroupKey) {
       const groupData = {
-        key: "group_" + Date.now(),
-        isGroup: true
+        key: '',
+        isGroup: true,
+        name:''
       };
       (this.diagram.model as go.GraphLinksModel).addNodeData(groupData);
       (this.diagram.model as go.GraphLinksModel).setDataProperty(semiCircleNode.data, "group", groupData.key);
     }
   
-    // Asignar ambos nodos al grupo
+    // Asignar el nodo al grupo
     (this.diagram.model as go.GraphLinksModel).setDataProperty(circleNode.data, "group", semiCircleNode.data.group);
   
-    // Bloquear el movimiento de los nodos individuales
+    // Posicionar los nodos uno abajo y el otro arriba
+    const groupLocation = semiCircleNode.location.copy();
+    const offset = 5; // Distancia entre los nodos (ajustada para que estén más cerca)
+  
+    // Posicionar el semicírculo arriba del círculo
+    semiCircleNode.location = new go.Point(groupLocation.x, groupLocation.y - offset);
+  
+    // Posicionar el círculo abajo del semicírculo
+    circleNode.location = new go.Point(groupLocation.x, groupLocation.y + offset);
+  
+    // Bloquear movimiento individual
     circleNode.movable = false;
     semiCircleNode.movable = false;
   
     this.diagram.commitTransaction("Attach Circle to SemiCircle");
   }
   
+    
+
   
   private addPaletteElements() {
     const $ = go.GraphObject.make;
@@ -179,11 +241,9 @@ export class ComponentesComponent implements OnInit {
         { 
           locationSpot: go.Spot.Center,
           movable: true,  // Permitir moverlo
-          fromLinkable: true,
-          toLinkable: true, 
           zOrder: 2, // Asegurar que el círculo esté sobre el semicírculo
         },
-        $(go.Shape, "Circle", { fill: "lightblue", width: 50, height: 50 })
+        $(go.Shape, "Circle", { fill: "lightblue", width: 30, height: 30 })
       )
     );
     
@@ -204,32 +264,6 @@ export class ComponentesComponent implements OnInit {
       }
     );
   }
-  private highlightSemiCircle(node: go.Part, highlight: boolean) {
-    const shape = node.findObject("SHAPE") as go.Shape; // Forzar el tipo a Shape
-    if (shape) {
-      shape.stroke = highlight ? "red" : "black";  // Cambiar el borde para resaltar
-    }
-  }
-  
-  public enableLinkingTool() {
-    const tool = this.diagram.toolManager.linkingTool;
-    const flechasElement = document.getElementById("flechas");
-    if (tool.isEnabled) {
-      tool.isEnabled = false;
-      this.diagram.currentCursor = "";
-      if (flechasElement) {
-        flechasElement.style.setProperty("background-color", "green");
-        flechasElement.innerText = "Activar Flechas";
-      }
-    } else {
-      tool.isEnabled = true;
-      if (flechasElement) {
-        flechasElement.style.setProperty("background-color", "red");
-        flechasElement.innerText = "Desactivar Flechas";
-      }
-      this.diagram.currentCursor = "pointer";
-    }
-  }
   private addCircleNode(rectNode: go.Part | null) {
     if (!(rectNode instanceof go.Node)) return; // Validamos que sea un nodo
     if (!rectNode.data || !rectNode.data.key) return; // Validamos que tenga un key válido
@@ -242,12 +276,16 @@ export class ComponentesComponent implements OnInit {
   
     let newNode: any = null; // Inicializamos la variable correctamente
   
+    // Asignamos un rectKey al nuevo nodo
+    const rectKey = rectNode.data.key;
+  
     if (this.interSolicitada) {
       newNode = {
         key: "circle_" + Date.now(),
         category: "circle",
         name: "",
-        loc: go.Point.stringify(rectLoc)
+        loc: go.Point.stringify(rectLoc),
+        rectKey: rectKey // Asociamos el rectángulo con el nuevo nodo
       };
     } 
     else if (this.interOfrecida) {
@@ -255,7 +293,8 @@ export class ComponentesComponent implements OnInit {
         key: "semi_" + Date.now(),
         category: "semiCircle",
         name: "",
-        loc: go.Point.stringify(rectLoc)
+        loc: go.Point.stringify(rectLoc),
+        rectKey: rectKey // Asociamos el rectángulo con el nuevo nodo
       };
     }
   
@@ -271,6 +310,8 @@ export class ComponentesComponent implements OnInit {
   
     this.diagram.commitTransaction("Add Node");
   }
+  
+  
   
   public toggleInterfaz(mode: 'ofrecida' | 'solicitada') {
     if (mode === 'ofrecida') {
