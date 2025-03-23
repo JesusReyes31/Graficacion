@@ -1,11 +1,13 @@
 import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as go from 'gojs';
+import { ToastrService } from 'ngx-toastr';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-componentes',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule,FormsModule],  
   templateUrl: './componentes.component.html',
   styleUrl: './componentes.component.css'
 })
@@ -14,12 +16,19 @@ export class ComponentesComponent implements OnInit {
   private diagram!: go.Diagram;
   public interOfrecida: boolean = false;
   public interSolicitada: boolean = false;
+  currentVersion = '1.0';
+  versions: string[] = [];
+  projectId = '';
 
   ngOnInit() {
     this.initDiagram();
     this.addPaletteElements();
     this.enableLinkingTool();
     
+  }
+  constructor(private toastr: ToastrService) {
+    this.projectId = sessionStorage.getItem('proyecto') || '';
+    this.loadVersions();
   }
 
   private initDiagram() {
@@ -124,6 +133,9 @@ export class ComponentesComponent implements OnInit {
         $(go.Shape,
           { strokeWidth: 2, stroke: "#000000" })
       );
+      this.diagram.model.addChangedListener(e => { 
+        if (e.isTransactionFinished) this.saveDiagram(); 
+      });
   }
   private attachCircleToSemiCircle(semiCircleNode: go.Part) {
     if (!(semiCircleNode instanceof go.Node)) return; // Validar nodo correcto
@@ -269,4 +281,58 @@ export class ComponentesComponent implements OnInit {
       this.interOfrecida = false;
     }
   }
+
+  // Gestión de versiones
+    loadVersions() {
+      const versionsKey = `${this.projectId}`;
+      const savedVersions = localStorage.getItem(versionsKey);
+       
+      if (savedVersions) {
+        this.versions = JSON.parse(savedVersions);
+        if (this.versions.length > 0) {
+          this.currentVersion = this.versions[this.versions.length - 1];
+        }
+      } else {
+        this.versions = ['1'];
+        this.currentVersion = '1';
+        localStorage.setItem(versionsKey, JSON.stringify(this.versions));
+      }
+    }
+  
+    createNewVersion() {
+      const lastVersion = parseInt(this.versions[this.versions.length - 1]);
+      const newVersion = (lastVersion + 1).toString();
+      this.currentVersion = newVersion;
+      this.versions.push(newVersion);
+      
+      localStorage.setItem(`${this.projectId}`, JSON.stringify(this.versions));
+      this.diagram.model = new go.GraphLinksModel({ linkKeyProperty: "key" });
+      this.saveDiagram();
+      this.toastr.success(`Nueva versión ${this.currentVersion} creada`);
+    }
+  
+    changeVersion(version: string) {
+      this.currentVersion = version;
+      this.loadDiagram();
+      this.toastr.info(`Versión ${version} cargada`);
+    }
+  
+    saveDiagram() {
+      if (this.diagram) {
+        localStorage.setItem(
+          `DiagramComp_${this.projectId}_v${this.currentVersion}`, 
+          this.diagram.model.toJson()
+        );
+      }
+    }
+    loadDiagram() {
+        const savedData = localStorage.getItem(`DiagramComp_${this.projectId}_v${this.currentVersion}`);
+        if (savedData) {
+          const model = go.Model.fromJson(savedData) as go.GraphLinksModel;
+          model.linkKeyProperty = "key";
+          this.diagram.model = model;
+          this.diagram.model.addChangedListener(e => { if (e.isTransactionFinished) this.saveDiagram(); });
+        }
+      }
+  
 }

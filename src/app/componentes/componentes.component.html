@@ -1,3 +1,25 @@
+<div class="version-control">
+  <div class="version-title">
+    <i class="fas fa-code-branch"></i>
+    <span>Control de Versiones</span>
+  </div>
+  <div class="version-actions">
+    <select 
+      class="form-select version-select" 
+      [(ngModel)]="currentVersion"
+      (change)="changeVersion($any($event.target).value)">
+      <option *ngFor="let version of versions" [value]="version">
+        Versión {{version}}
+      </option>
+    </select>
+    <button 
+      class="btn version-btn"
+      (click)="createNewVersion()">
+      <i class="fas fa-plus"></i> Nueva Versión
+    </button>
+  </div>
+</div>
+
 <div style="display: flex; width: 100%; height: 100vh;">
     <div class="palette-container">
       <div class="palette-header">Elementos</div>
