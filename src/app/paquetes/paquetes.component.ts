@@ -1,9 +1,13 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import * as go from 'gojs';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-paquetes',
   templateUrl: './paquetes.component.html',
+  imports:[FormsModule,CommonModule],
   styleUrls: ['./paquetes.component.css']
 })
 export class PaquetesComponent implements OnInit, AfterViewInit {
@@ -11,15 +15,21 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
   public myPalette!: go.Palette;
   public relationshipMode: boolean = false;
   private storageKey = 'myDiagramModelpa'; 
+  currentVersion = '1.0';
+  versions: string[] = [];
+  projectId = ''
 
-  constructor() {}
+  constructor(private toastr:ToastrService) {
+    this.projectId = sessionStorage.getItem('proyecto') || '';
+    this.loadVersions();
+  }
 
   ngOnInit(): void { }
 
   ngAfterViewInit(): void {
     this.initializeDiagram();
     this.initializePalette();
-    this.loadDiagramFromStorage();
+    this.loadDiagram();
     this.setupAutoSave();
   }
 
@@ -129,6 +139,9 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
 
     // Modelo inicial vacío; se cargará desde localStorage si existe
     this.myDiagram.model = new go.GraphLinksModel([], []);
+    this.myDiagram.model.addChangedListener(e => { 
+      if (e.isTransactionFinished) this.saveDiagram(); 
+    });
   }
 
   // Configura la paleta con alineación centrada
@@ -155,19 +168,6 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
     this.myDiagram.toolManager.linkingTool.isEnabled = this.relationshipMode;
   }
 
-  // Carga el modelo del diagrama desde localStorage si existe
-  loadDiagramFromStorage(): void {
-    const modelJson = localStorage.getItem(this.storageKey);
-    if (modelJson) {
-      try {
-        this.myDiagram.model = go.Model.fromJson(modelJson);
-        console.log('Diagrama cargado', this.myDiagram.model.toJson());
-      } catch (e) {
-        console.error('Error al cargar el diagrama guardado:', e);
-      }
-    }
-  }
-
   // Configura el guardado automático del diagrama en localStorage
   setupAutoSave(): void {
     this.myDiagram.addModelChangedListener((e) => {
@@ -177,6 +177,60 @@ export class PaquetesComponent implements OnInit, AfterViewInit {
         localStorage.setItem(this.storageKey, modelJson);
       }
     });
+  }
+
+  loadDiagram() {
+    const savedData = localStorage.getItem(`DiagramPaquetes_${this.projectId}_v${this.currentVersion}`);
+    if (savedData) {
+      const model = go.Model.fromJson(savedData) as go.GraphLinksModel;
+      model.linkKeyProperty = "key";
+      this.myDiagram.model = model;
+      this.myDiagram.model.addChangedListener(e => { if (e.isTransactionFinished) this.saveDiagram(); });
+    }
+  }
+
+  saveDiagram() {
+    if (this.myDiagram) {
+      localStorage.setItem(
+        `DiagramPaquetes_${this.projectId}_v${this.currentVersion}`, 
+        this.myDiagram.model.toJson()
+      );
+    }
+  }
+
+  // Gestión de versiones
+  loadVersions() {
+    const versionsKey = `DiagramPaquetesVersions_${this.projectId}`;
+    const savedVersions = localStorage.getItem(versionsKey);
+      
+    if (savedVersions) {
+      this.versions = JSON.parse(savedVersions);
+      if (this.versions.length > 0) {
+        this.currentVersion = this.versions[this.versions.length - 1];
+      }
+    } else {
+      this.versions = ['1'];
+      this.currentVersion = '1';
+      localStorage.setItem(versionsKey, JSON.stringify(this.versions));
+    }
+  }
+
+  createNewVersion() {
+    const lastVersion = parseInt(this.versions[this.versions.length - 1]);
+    const newVersion = (lastVersion + 1).toString();
+    this.currentVersion = newVersion;
+    this.versions.push(newVersion);
+    
+    localStorage.setItem(`DiagramPaquetesVersions_${this.projectId}`, JSON.stringify(this.versions));
+    this.myDiagram.model = new go.GraphLinksModel({ linkKeyProperty: "key" });
+    this.saveDiagram();
+    this.toastr.success(`Nueva versión ${this.currentVersion} creada`);
+  }
+
+  changeVersion(version: string) {
+    this.currentVersion = version;
+    this.loadDiagram();
+    this.toastr.info(`Versión ${version} cargada`);
   }
 }
   

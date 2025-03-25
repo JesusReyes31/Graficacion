@@ -1,3 +1,4 @@
+<!-- Control de versiones -->
 <div class="version-control">
   <div class="version-title">
     <i class="fas fa-code-branch"></i>
@@ -25,10 +26,10 @@
       <div class="palette-header">Elementos</div>
       <div id="palette"></div>
       <div class="tools">
-        <button id="ofrecida" [ngClass]="{'active': interOfrecida}" (click)="toggleInterfaz('ofrecida')">--C</button>
+        <button class="button" id="ofrecida" [ngClass]="{'active': interOfrecida}" (click)="toggleInterfaz('ofrecida')">--C</button>
         <br>
         <br>
-        <button id="solicitada" [ngClass]="{'active': interSolicitada}" (click)="toggleInterfaz('solicitada')">--O</button>
+        <button class="button" id="solicitada" [ngClass]="{'active': interSolicitada}" (click)="toggleInterfaz('solicitada')">--O</button>
       </div>
     </div>
     <div #diagramDiv class="diagram"></div>

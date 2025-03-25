@@ -48,7 +48,7 @@
 }
 
 /* === Botones Modernos === */
-button {
+.button {
   background-color: #38bdf8;
   color: white;
   border: none;

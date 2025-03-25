@@ -1,10 +1,14 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, AfterViewInit, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import * as go from 'gojs';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-uml-secuencias',
   standalone: true,
   templateUrl: './secuencia.component.html',
+  imports:[FormsModule,CommonModule], 
   styleUrls: ['./secuencia.component.css']
 })
 export class SecuenciaComponent implements AfterViewInit {
@@ -13,10 +17,19 @@ export class SecuenciaComponent implements AfterViewInit {
   private myDiagram!: go.Diagram;
   private myPalette!: go.Palette;
   diagram!: go.Diagram;
+  currentVersion = '1.0';
+  versions: string[] = [];
+  projectId = '';
+
+  constructor(private toastr:ToastrService){
+    this.projectId = sessionStorage.getItem('proyecto') || '';
+    this.loadVersions();
+  }
 
   ngAfterViewInit() {
     this.initDiagram();
     this.initPalette();
+    this.loadDiagram();
   }
 
   initDiagram() {
@@ -178,6 +191,10 @@ export class SecuenciaComponent implements AfterViewInit {
       }
     });
 
+    this.myDiagram.model.addChangedListener(e => { 
+      if (e.isTransactionFinished) this.saveDiagram(); 
+    });
+
     this.loadModel();
   }
 
@@ -217,5 +234,59 @@ export class SecuenciaComponent implements AfterViewInit {
     };
 
     this.myDiagram.model = go.Model.fromJson(modelData);
+  }
+  
+  loadDiagram() {
+    const savedData = localStorage.getItem(`DiagramSecuencias_${this.projectId}_v${this.currentVersion}`);
+    if (savedData) {
+      const model = go.Model.fromJson(savedData) as go.GraphLinksModel;
+      model.linkKeyProperty = "key";
+      this.myDiagram.model = model;
+      this.myDiagram.model.addChangedListener(e => { if (e.isTransactionFinished) this.saveDiagram(); });
+    }
+  }
+
+  saveDiagram() {
+    if (this.myDiagram) {
+      localStorage.setItem(
+        `DiagramSecuencias_${this.projectId}_v${this.currentVersion}`, 
+        this.myDiagram.model.toJson()
+      );
+    }
+  }
+
+  // Gestión de versiones
+  loadVersions() {
+    const versionsKey = `DiagramSecuenciasVersions_${this.projectId}`;
+    const savedVersions = localStorage.getItem(versionsKey);
+      
+    if (savedVersions) {
+      this.versions = JSON.parse(savedVersions);
+      if (this.versions.length > 0) {
+        this.currentVersion = this.versions[this.versions.length - 1];
+      }
+    } else {
+      this.versions = ['1'];
+      this.currentVersion = '1';
+      localStorage.setItem(versionsKey, JSON.stringify(this.versions));
+    }
+  }
+
+  createNewVersion() {
+    const lastVersion = parseInt(this.versions[this.versions.length - 1]);
+    const newVersion = (lastVersion + 1).toString();
+    this.currentVersion = newVersion;
+    this.versions.push(newVersion);
+    
+    localStorage.setItem(`DiagramSecuenciasVersions_${this.projectId}`, JSON.stringify(this.versions));
+    this.myDiagram.model = new go.GraphLinksModel({ linkKeyProperty: "key" });
+    this.saveDiagram();
+    this.toastr.success(`Nueva versión ${this.currentVersion} creada`);
+  }
+
+  changeVersion(version: string) {
+    this.currentVersion = version;
+    this.loadDiagram();
+    this.toastr.info(`Versión ${version} cargada`);
   }
 }

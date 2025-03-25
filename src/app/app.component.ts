@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
-import { Router, RouterLink, RouterModule, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import Swal from 'sweetalert2';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -11,15 +12,16 @@ import Swal from 'sweetalert2';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
-  title = 'menu';
+export class AppComponent implements OnInit {
+  title = 'Graficacion';
   proyectos: string[] = ['Proyecto 1', 'Proyecto 2', 'Proyecto 3', 'Proyecto 4', 'Proyecto 5'];
   proyectoSeleccionado: string | null = null;
   creandoProyecto: boolean = false;
   nuevoProyecto: string = '';
   isButtonDisabled = true;
-  showComponent = true;
+  showComponent = false;
   public sidebarVisible: boolean = true;
+  activeRoute: string = '';
 
   constructor(private router:Router){}
 
@@ -28,6 +30,14 @@ export class AppComponent {
       this.proyectoSeleccionado = sessionStorage.getItem('proyecto');
     }
     // sessionStorage.removeItem('proyecto');
+
+    // Seguimiento de la ruta activa para resaltar el elemento de menú correspondiente
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.activeRoute = event.url;
+      this.showComponent = true;
+    });
   }
   
   @HostListener('window:beforeunload')
@@ -42,6 +52,7 @@ export class AppComponent {
   }
   seleccionarProyecto(proyecto: string) {
     this.proyectoSeleccionado = proyecto;
+    this.isButtonDisabled = false;
     sessionStorage.setItem('proyecto',proyecto)
     this.showComponent = false; // Elimina el componente
     setTimeout(() => {
@@ -78,6 +89,12 @@ export class AppComponent {
       cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed) {
+        if (this.proyectoSeleccionado === this.proyectos[index]) {
+          this.proyectoSeleccionado = null;
+          this.isButtonDisabled = true;
+          this.showComponent = false;
+          this.router.navigate(['/']);
+        }
         this.proyectos.splice(index, 1);
         Swal.fire('Eliminado', 'El proyecto ha sido eliminado.', 'success');
       }
@@ -104,6 +121,9 @@ export class AppComponent {
     }).then((result) => {
       if (result.isConfirmed) {
         this.proyectos[index] = result.value.trim();
+        if (this.proyectoSeleccionado === this.proyectos[index]) {
+          this.proyectoSeleccionado = result.value.trim();
+        }
         Swal.fire('Guardado', 'El nombre del proyecto ha sido actualizado.', 'success');
       }
     });
