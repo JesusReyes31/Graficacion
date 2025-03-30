@@ -7,10 +7,10 @@
   <div class="version-actions">
     <select 
       class="form-select version-select" 
-      [(ngModel)]="currentVersion"
+      [(ngModel)]="currentVersionId"
       (change)="changeVersion($any($event.target).value)">
-      <option *ngFor="let version of versions" [value]="version">
-        Versión {{version}}
+      <option *ngFor="let version of versions; let i = index" [value]="version.ID_V">
+        Versión {{ i + 1 }}
       </option>
     </select>
     <button 
@@ -18,8 +18,19 @@
       (click)="createNewVersion()">
       <i class="fas fa-plus"></i> Nueva Versión
     </button>
+    <button 
+      class="btn version-btn guardar"
+      (click)="guardarVersion()">
+      <i class="fas fa-floppy-disk"></i> Guardar
+    </button>
+    <button 
+      class="btn version-btn delete"
+      (click)="eliminarVersion()">
+      <i class="fas fa-delete-left"></i> Eliminar
+    </button>
   </div>
 </div>
+
 
 <div style="display: flex; width: 100%; height: 100vh;">
     <div class="palette-container">

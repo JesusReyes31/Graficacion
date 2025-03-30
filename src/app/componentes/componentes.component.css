@@ -1,6 +1,7 @@
 /* === Contenedor de la paleta === */
 .palette-container {
   width: 180px; /* Más ancho para mejor usabilidad */
+  height: 400px;
   border-right: 1px solid #ccc;
   display: flex;
   flex-direction: column;
@@ -65,4 +66,10 @@ button:hover {
 
 button.active {
   background-color: #16a34a; /* Verde más suave */
+}
+.delete{
+  background-color: #F44336 !important;
+}
+.guardar{
+  background-color: #4CAF50 !important; 
 }
