@@ -9,18 +9,18 @@
       
       <div class="sidebar-content">
         <ul class="project-list">
-          <li *ngFor="let proyecto of proyectos; let i = index" 
-              (click)="seleccionarProyecto(proyecto)"
-              [class.active]="proyecto === proyectoSeleccionado">
+          <li *ngFor="let proyecto of proyectos" 
+              (click)="seleccionarProyecto(proyecto.Nombre,proyecto.ID)"
+              [class.active]="proyecto.Nombre === proyectoSeleccionado">
             <div class="project-item">
               <i class="fas fa-folder-open"></i> 
-              <span>{{ proyecto }}</span>
+              <span>{{ proyecto.Nombre }}</span>
             </div>
             <div class="acciones">
-              <button class="action-btn edit-btn" (click)="editarProyecto(i, $event)" title="Editar proyecto">
+              <button class="action-btn edit-btn" (click)="editarProyecto(proyecto, $event)" title="Editar proyecto">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="action-btn delete-btn" (click)="eliminarProyecto(i, $event)" title="Eliminar proyecto">
+              <button class="action-btn delete-btn" (click)="eliminarProyecto(proyecto.ID, $event)" title="Eliminar proyecto">
                 <i class="fas fa-trash"></i>
               </button>
             </div>

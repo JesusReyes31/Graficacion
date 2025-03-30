@@ -1,15 +1,17 @@
-import express, { Request, Response } from "express";
+import "dotenv/config"
+import express,{Request,Response}  from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { router } from "./routes";
-
-dotenv.config();
+import "./models"
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: '*', // Cambia al origen correcto de tu frontend
+  exposedHeaders: ['Authorization'] 
+}));
 app.use(express.json());
 app.use(router);
 

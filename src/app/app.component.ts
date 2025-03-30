@@ -4,6 +4,10 @@ import { FormsModule, NgModel } from '@angular/forms';
 import { Router, RouterLink, RouterModule, RouterOutlet, NavigationEnd } from '@angular/router';
 import Swal from 'sweetalert2';
 import { filter } from 'rxjs/operators';
+import { ProyectosService } from './services/proyectos/proyectos.service';
+import { ToastrService } from 'ngx-toastr';
+import { VersionesService } from './services/versiones/versiones.service';
+import { CompartidoService } from './services/compartido/compartido.service';
 
 @Component({
   selector: 'app-root',
@@ -14,7 +18,7 @@ import { filter } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit {
   title = 'Graficacion';
-  proyectos: string[] = ['Proyecto 1', 'Proyecto 2', 'Proyecto 3', 'Proyecto 4', 'Proyecto 5'];
+  proyectos: { ID: number, Nombre: string }[] = [];
   proyectoSeleccionado: string | null = null;
   creandoProyecto: boolean = false;
   nuevoProyecto: string = '';
@@ -23,14 +27,20 @@ export class AppComponent implements OnInit {
   public sidebarVisible: boolean = true;
   activeRoute: string = '';
 
-  constructor(private router:Router){}
+  constructor(private router:Router,private proyectosService:ProyectosService,private toastr:ToastrService,private versionesService:VersionesService,private compartido:CompartidoService){}
 
-  ngOnInit(){
+  async ngOnInit(){
+    await this.proyectosService.getProyectos().subscribe((data:any) => {
+      this.proyectos = data
+    });
+
+    // Verifica si hay un proyecto seleccionado en sessionStorage
     if(sessionStorage.getItem('proyecto')){
       this.proyectoSeleccionado = sessionStorage.getItem('proyecto');
+      this.isButtonDisabled = false; // Habilitar el botón si hay un proyecto seleccionado
     }
     // sessionStorage.removeItem('proyecto');
-
+    
     // Seguimiento de la ruta activa para resaltar el elemento de menú correspondiente
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -50,9 +60,17 @@ export class AppComponent implements OnInit {
   toggleSidebar() {
     this.sidebarVisible = !this.sidebarVisible;
   }
-  seleccionarProyecto(proyecto: string) {
+  seleccionarProyecto(proyecto: string,id:number) {
+    this.versionesService.getVersiones(id).subscribe((data:any) => {
+      if(data.message){
+        this.compartido.setProyectoSeleccionado('');
+        return;
+      }
+      this.compartido.setProyectoSeleccionado(data);
+    });
     this.proyectoSeleccionado = proyecto;
     this.isButtonDisabled = false;
+    sessionStorage.setItem('ID_Proyecto',id.toString())
     sessionStorage.setItem('proyecto',proyecto)
     this.showComponent = false; // Elimina el componente
     setTimeout(() => {
@@ -66,9 +84,11 @@ export class AppComponent implements OnInit {
 
   agregarProyecto() {
     if (this.nuevoProyecto.trim()) {
-      this.proyectos.push(this.nuevoProyecto.trim());
-      this.nuevoProyecto = '';
-      this.creandoProyecto = false;
+      this.proyectosService.postProyecto({ Nombre: this.nuevoProyecto.trim() }).subscribe((data:any) => {
+        this.proyectos.push(data);
+        this.nuevoProyecto = '';
+        this.creandoProyecto = false;
+      });
     }
   }
 
@@ -77,7 +97,7 @@ export class AppComponent implements OnInit {
     this.nuevoProyecto = ''; // Limpiar el campo de entrada
   }
 
-  eliminarProyecto(index: number, event: Event) {
+  eliminarProyecto(ID: number, event: Event) {
     event.stopPropagation();
   
     Swal.fire({
@@ -89,26 +109,26 @@ export class AppComponent implements OnInit {
       cancelButtonText: 'Cancelar'
     }).then((result) => {
       if (result.isConfirmed) {
-        if (this.proyectoSeleccionado === this.proyectos[index]) {
-          this.proyectoSeleccionado = null;
-          this.isButtonDisabled = true;
-          this.showComponent = false;
+        this.proyectosService.deleteProyecto(ID).subscribe(() => {
           this.router.navigate(['/']);
-        }
-        this.proyectos.splice(index, 1);
-        Swal.fire('Eliminado', 'El proyecto ha sido eliminado.', 'success');
+          this.proyectos = this.proyectos.filter(proyecto => proyecto.ID !== ID);
+          this.toastr.success('El proyecto ha sido eliminado.', 'success');
+          this.proyectoSeleccionado = null; // Limpiar la selección del proyecto
+          sessionStorage.removeItem('proyecto'); // Limpiar el almacenamiento local
+        });
       }
     });
   }
   
-  editarProyecto(index: number, event: Event) {
+  
+  editarProyecto(proyecto: any, event: Event) {
     event.stopPropagation();
   
     Swal.fire({
       title: 'Editar proyecto',
       input: 'text',
       inputLabel: 'Nuevo nombre del proyecto:',
-      inputValue: this.proyectos[index],
+      inputValue: proyecto.Nombre,
       showCancelButton: true,
       confirmButtonText: 'Guardar',
       cancelButtonText: 'Cancelar',
@@ -119,13 +139,29 @@ export class AppComponent implements OnInit {
         return;
       }
     }).then((result) => {
+      if (this.proyectos.some(p => p.Nombre === result.value.trim())) {
+        this.toastr.error('El nombre del proyecto ya existe', 'Error');
+        return;
+      }
+  
       if (result.isConfirmed) {
-        this.proyectos[index] = result.value.trim();
-        if (this.proyectoSeleccionado === this.proyectos[index]) {
-          this.proyectoSeleccionado = result.value.trim();
-        }
-        Swal.fire('Guardado', 'El nombre del proyecto ha sido actualizado.', 'success');
+        this.proyectosService.putProyecto(proyecto.ID, { Nombre: result.value.trim() }).subscribe(() => {
+          if (this.proyectoSeleccionado === proyecto.Nombre) {
+            this.proyectoSeleccionado = result.value.trim();
+          }
+          proyecto.Nombre = result.value.trim();
+          this.proyectos = this.proyectos.map(p => {
+            if (p.ID === proyecto.ID) {
+              return { ...p, Nombre: result.value.trim() };
+            }
+            return p;
+          });
+          sessionStorage.setItem('proyecto', proyecto.Nombre);
+          this.toastr.success('El nombre del proyecto ha sido actualizado.', 'Éxito');
+          this.router.navigate(['/']);
+        });
       }
     });
   }
+  
 }
