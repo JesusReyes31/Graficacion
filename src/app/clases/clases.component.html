@@ -1,26 +1,36 @@
 <div style="display: flex; flex-direction: column; gap: 10px">
     <!-- Control de versiones -->
-  <div class="version-control">
-    <div class="version-title">
-      <i class="fas fa-code-branch"></i>
-      <span>Control de Versiones</span>
+    <div class="version-control">
+      <div class="version-title">
+        <i class="fas fa-code-branch"></i>
+        <span>Control de Versiones</span>
+      </div>
+      <div class="version-actions">
+        <select 
+          class="form-select version-select" 
+          [(ngModel)]="currentVersionId"
+          (change)="changeVersion($any($event.target).value)">
+          <option *ngFor="let version of versions; let i = index" [value]="version.ID_V">
+            Versión {{ i + 1 }}
+          </option>
+        </select>
+        <button 
+          class="btn version-btn"
+          (click)="createNewVersion()">
+          <i class="fas fa-plus"></i> Nueva Versión
+        </button>
+        <button 
+          class="btn version-btn guardar"
+          (click)="guardarVersion()">
+          <i class="fas fa-floppy-disk"></i> Guardar
+        </button>
+        <button 
+          class="btn version-btn delete"
+          (click)="eliminarVersion()">
+          <i class="fas fa-delete-left"></i> Eliminar
+        </button>
+      </div>
     </div>
-    <div class="version-actions">
-      <select 
-        class="form-select version-select" 
-        [(ngModel)]="currentVersion"
-        (change)="changeVersion($any($event.target).value)">
-        <option *ngFor="let version of versions" [value]="version">
-          Versión {{version}}
-        </option>
-      </select>
-      <button 
-        class="btn version-btn"
-        (click)="createNewVersion()">
-        <i class="fas fa-plus"></i> Nueva Versión
-      </button>
-    </div>
-  </div>
   <!-- Barra de herramientas de relaciones -->
   <div class="relationship-toolbar">
     <button 

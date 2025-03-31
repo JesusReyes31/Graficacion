@@ -89,3 +89,9 @@
     color: white;
     box-shadow: 0 2px 5px rgba(190, 24, 93, 0.3);
   }
+  .delete{
+    background-color: #F44336 !important;
+  }
+  .guardar{
+    background-color: #4CAF50 !important; 
+  }

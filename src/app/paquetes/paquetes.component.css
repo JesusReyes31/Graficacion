@@ -72,3 +72,9 @@
   border-radius: 12px;  /* Bordes redondeados */
   /* box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05);  Sombra interior más suave */
 }
+.delete{
+  background-color: #F44336 !important;
+}
+.guardar{
+  background-color: #4CAF50 !important; 
+}

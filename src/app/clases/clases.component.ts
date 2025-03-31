@@ -3,6 +3,8 @@ import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as go from 'gojs';
 import { Toast, ToastrService } from 'ngx-toastr';
+import { VersionesService } from '../services/versiones/versiones.service';
+
 
 interface Parameter {
   paramName: string;
@@ -29,23 +31,35 @@ interface NodeData {
 })
 
 export class ClasesComponent implements AfterViewInit {
-  public diagram: go.Diagram | null = null;
-  currentVersion = '1.0';
-  versions: string[] = [];
+  diagram!: go.Diagram;
+  currentVersionId!: number;
+  versions: any[] = []; // Solo se guardarán versiones con ID_Tipo === 5
+  ID_Proyecto = 0;
   projectId = '';
+  versionData = {
+    ID_V: 0,
+    ID_Proyecto: 0,
+    ID_Tipo: 5,
+    json: ''
+  };
   @ViewChild('diagramDiv') diagramDiv!: ElementRef;
   @ViewChild('paletteDiv') paletteDiv!: ElementRef;
 
   selectedMultiplicity: string = '1..*';
 
-  constructor(private toastr:ToastrService){
+  constructor(private toastr:ToastrService, private versionesService: VersionesService) {
     this.projectId = sessionStorage.getItem('proyecto') || '';
+    this.ID_Proyecto = parseInt(sessionStorage.getItem('ID_Proyecto') || '0');
+    this.versionData.ID_Proyecto = this.ID_Proyecto;
+  }
+
+  ngOnInit(): void {
     this.loadVersions();
   }
+
   ngAfterViewInit(): void {
     this.initDiagram();
     this.initPalette();
-    this.loadDiagram();
   }
 
   initDiagram(): void {
@@ -469,55 +483,145 @@ private createLink(relationshipType: string, symbol: string = "", dashed: boolea
 
   // Gestión de versiones
   loadVersions() {
-    const versionsKey = `DiagramClasesVersions_${this.projectId}`;
-    const savedVersions = localStorage.getItem(versionsKey);
-     
-    if (savedVersions) {
-      this.versions = JSON.parse(savedVersions);
-      if (this.versions.length > 0) {
-        this.currentVersion = this.versions[this.versions.length - 1];
-      }
-    } else {
-      this.versions = ['1'];
-      this.currentVersion = '1';
-      localStorage.setItem(versionsKey, JSON.stringify(this.versions));
-    }
-  }
-
-  createNewVersion() {
-    const lastVersion = parseInt(this.versions[this.versions.length - 1]);
-    const newVersion = (lastVersion + 1).toString();
-    this.currentVersion = newVersion;
-    this.versions.push(newVersion);
-    
-    localStorage.setItem(`DiagramClasesVersions_${this.projectId}`, JSON.stringify(this.versions));
-    this.diagram!.model = new go.GraphLinksModel({ linkKeyProperty: "key" });
-    this.saveDiagram();
-    this.toastr.success(`Nueva versión ${this.currentVersion} creada`);
-  }
-
-  changeVersion(version: string) {
-    this.currentVersion = version;
-    this.loadDiagram();
-    this.toastr.info(`Versión ${version} cargada`);
-  }
-
-  saveDiagram() {
-    if (this.diagram) {
-      localStorage.setItem(
-        `DiagramClases_${this.projectId}_v${this.currentVersion}`, 
-        this.diagram.model.toJson()
+      this.versionesService.getVersiones(this.ID_Proyecto).subscribe(
+        (data: any) => {
+          // Si la respuesta tiene "message" o viene vacía, asumimos que no hay versiones.
+          if (data.message || !data || data.length === 0) {
+            this.versions = [];
+          } else {
+            // Filtrar solo las versiones de tipo 5
+            this.versions = data.filter((v: any) => v.ID_Tipo === 5);
+          }
+          if (this.versions.length === 0) {
+            // No hay versiones: se crea la versión 1 automáticamente desde el frontend
+            this.versionData.json = "{}";
+            this.versionesService.postVersion(this.versionData).subscribe(
+              (nuevaVersion: any) => {
+                this.versions.push(nuevaVersion);
+                this.currentVersionId = nuevaVersion.ID_V;
+                this.loadDiagram(this.currentVersionId);
+                this.versionData.ID_V = nuevaVersion.ID_V;
+                this.versionData.ID_Tipo = 5;
+                this.versionData.ID_Proyecto = this.ID_Proyecto;
+                this.versionData.json = nuevaVersion.json;
+                this.toastr.info("Se creó automáticamente la versión 1 del diagrama");
+              },
+              (error) => {
+                console.error('Error al crear la versión inicial:', error);
+                this.toastr.error('Error al crear la versión inicial');
+              }
+            );
+          } else {
+            // Se selecciona la última versión (la más reciente) para cargarla
+            this.currentVersionId = this.versions[0].ID_V;
+            this.versionData.ID_V = this.currentVersionId;
+            this.loadDiagram(this.currentVersionId);
+          }
+        },
+        (error) => {
+          console.error('Error al cargar versiones:', error);
+          this.toastr.error('Error al cargar versiones');
+        }
       );
     }
-  }
-
-  loadDiagram() {
-    const savedData = localStorage.getItem(`DiagramClases_${this.projectId}_v${this.currentVersion}`);
-    if (savedData) {
-      const model = go.Model.fromJson(savedData) as go.GraphLinksModel;
-      model.linkKeyProperty = "key";
-      this.diagram!.model = model;
-      this.diagram!.model.addChangedListener(e => { if (e.isTransactionFinished) this.saveDiagram(); });
+  
+    createNewVersion() {
+      this.versionData.json = "{}";
+      this.versionData.ID_Proyecto = this.ID_Proyecto;
+      // Al crear nueva versión, siempre se crea del tipo 1
+      this.versionData.ID_Tipo = 5;
+      this.versionesService.postVersion(this.versionData).subscribe(
+        (data: any) => {
+          this.versions.push(data);
+          this.currentVersionId = data.ID_V;
+          // Reinicia el diagrama para la nueva versión
+          this.diagram.model = new go.GraphLinksModel({ linkKeyProperty: "key" });
+          this.toastr.success(`Nueva versión ${this.versions.length} creada`);
+          this.saveDiagram();
+          this.versionData.ID_V = data.ID_V;
+        },
+        (error) => {
+          console.error('Error al crear la versión:', error);
+          this.toastr.error('Error al crear la versión');
+        }
+      );
     }
-  }
+  
+    guardarVersion() {
+      this.versionData.json = this.diagram.model.toJson();
+      this.versionesService.putVersion(this.versionData.ID_V, {
+        ID_Proyecto: this.versionData.ID_Proyecto,
+        ID_Tipo: this.versionData.ID_Tipo,
+        json: this.versionData.json
+      }).subscribe(
+        (data: any) => {
+          this.toastr.success('Versión guardada en la base de datos');
+          // Actualiza el objeto en el arreglo de versiones
+          const index = this.versions.findIndex(v => v.ID_V == this.versionData.ID_V);
+          if (index !== -1) {
+            this.versions[index] = data;
+          }
+        },
+        (error) => {
+          console.error('Error al guardar la versión:', error);
+          this.toastr.error('Error al guardar la versión');
+        }
+      );
+    }
+  
+    changeVersion(versionId: number) {
+      this.currentVersionId = versionId;
+      this.versionData.ID_V = versionId;
+      console.log(this.versionData.ID_V)
+      this.loadDiagram(versionId);
+      this.toastr.info(`Versión ${this.getVersionOrder(versionId)} cargada`);
+    }
+  
+    saveDiagram() {
+      if (this.diagram && this.versionData.ID_V) {
+        const json = this.diagram.model.toJson();
+        this.versionData.json = json;
+        this.versionesService.putVersion(this.versionData.ID_V, {
+          ID_Proyecto: this.ID_Proyecto,
+          ID_Tipo: this.versionData.ID_Tipo,
+          json: json
+        }).subscribe(
+          () => {},
+          (error) => {
+            console.error('Error actualizando el diagrama', error);
+          }
+        );
+      }
+    }
+    loadDiagram(versionId: number) {
+        console.log(this.versions)
+        const selectedVersion = this.versions.find(v => v.ID_V == versionId);
+        console.log(selectedVersion.json)
+        if (selectedVersion && selectedVersion.json) {
+          const model = go.Model.fromJson(selectedVersion.json) as go.GraphLinksModel;
+          model.linkKeyProperty = "key";
+          this.diagram.model = model;
+          this.diagram.model.addChangedListener(e => { if (e.isTransactionFinished) this.saveDiagram(); });
+        } else {
+          this.toastr.error('No se encontró la versión o no contiene datos');
+        }
+      }
+    
+      getVersionOrder(versionId: number): number {
+        const index = this.versions.findIndex(v => v.ID_V == versionId);
+        return index !== -1 ? index + 1 : 0;
+      }
+    
+      eliminarVersion(){
+        this.versionesService.deleteVersion(this.versionData.ID_V).subscribe(
+          (data:any) => {
+            this.versions = this.versions.filter(v => v.ID_V !== this.currentVersionId);
+            this.toastr.success('Versión eliminada');
+            if(this.versions.length > 0) {
+              this.loadDiagram(this.versions[0].ID_V);
+            }
+            this.loadVersions();
+          }
+        );
+      }
 }

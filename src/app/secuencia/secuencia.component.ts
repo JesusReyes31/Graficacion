@@ -3,6 +3,7 @@ import { Component, ElementRef, AfterViewInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as go from 'gojs';
 import { ToastrService } from 'ngx-toastr';
+import { VersionesService } from '../services/versiones/versiones.service';
 
 @Component({
   selector: 'app-uml-secuencias',
@@ -14,28 +15,38 @@ import { ToastrService } from 'ngx-toastr';
 export class SecuenciaComponent implements AfterViewInit {
   @ViewChild('diagramDiv') diagramDiv!: ElementRef;
   @ViewChild('paletteDiv') paletteDiv!: ElementRef;
-  private myDiagram!: go.Diagram;
   private myPalette!: go.Palette;
   diagram!: go.Diagram;
-  currentVersion = '1.0';
-  versions: string[] = [];
+  currentVersionId!: number;
+  versions: any[] = []; // Solo se guardarán versiones con ID_Tipo === 2
+  ID_Proyecto = 0;
   projectId = '';
+  versionData = {
+    ID_V: 0,
+    ID_Proyecto: 0,
+    ID_Tipo: 2,
+    json: ''
+  };
 
-  constructor(private toastr:ToastrService){
+  constructor(private toastr:ToastrService, private versionesService: VersionesService) {
     this.projectId = sessionStorage.getItem('proyecto') || '';
+    this.ID_Proyecto = parseInt(sessionStorage.getItem('ID_Proyecto') || '0');
+    this.versionData.ID_Proyecto = this.ID_Proyecto;
+  }
+  
+  ngOnInit() {
     this.loadVersions();
   }
 
   ngAfterViewInit() {
     this.initDiagram();
     this.initPalette();
-    this.loadDiagram();
   }
 
   initDiagram() {
     const $ = go.GraphObject.make;
 
-    this.myDiagram = $(go.Diagram, this.diagramDiv.nativeElement, {
+    this.diagram = $(go.Diagram, this.diagramDiv.nativeElement, {
       allowCopy: false,
       "undoManager.isEnabled": true,
       "draggingTool.dragsLink": true,
@@ -45,7 +56,7 @@ export class SecuenciaComponent implements AfterViewInit {
     });
 
     // Plantilla de los actores principales (grupos)
-    this.myDiagram.groupTemplate = $(
+    this.diagram.groupTemplate = $(
       go.Group, "Vertical",
       {
         locationSpot: go.Spot.Top,
@@ -77,7 +88,7 @@ export class SecuenciaComponent implements AfterViewInit {
     );
 
     // Plantilla para los nodos de acción
-    this.myDiagram.nodeTemplate = $(
+    this.diagram.nodeTemplate = $(
       go.Node, "Auto",
       {
         locationSpot: go.Spot.Top,
@@ -120,7 +131,7 @@ export class SecuenciaComponent implements AfterViewInit {
     );
 
     // Plantilla para las conexiones (flechas)
-    this.myDiagram.linkTemplate = $(
+    this.diagram.linkTemplate = $(
       go.Link,
       { 
         curve: go.Link.None, 
@@ -170,7 +181,7 @@ export class SecuenciaComponent implements AfterViewInit {
     );
 
     // Evento para detectar cuando se crea un nuevo enlace y determinar si es de respuesta
-    this.myDiagram.addDiagramListener("LinkDrawn", function(e) {
+    this.diagram.addDiagramListener("LinkDrawn", function(e) {
       const link = e.subject;
       if (link instanceof go.Link) {
         const fromNode = link.fromNode;
@@ -184,14 +195,14 @@ export class SecuenciaComponent implements AfterViewInit {
     });
 
     // Evento para evitar que los enlaces queden vacíos después de editarse
-    this.myDiagram.addDiagramListener("TextEdited", (e) => {
+    this.diagram.addDiagramListener("TextEdited", (e) => {
       const tb = e.subject as go.TextBlock;
       if (tb && tb.text.trim() === "") {
-        this.myDiagram.model.setDataProperty(tb.part!.data, "text", "Escribe aquí...");
+        this.diagram.model.setDataProperty(tb.part!.data, "text", "Escribe aquí...");
       }
     });
 
-    this.myDiagram.model.addChangedListener(e => { 
+    this.diagram.model.addChangedListener(e => { 
       if (e.isTransactionFinished) this.saveDiagram(); 
     });
 
@@ -202,7 +213,7 @@ export class SecuenciaComponent implements AfterViewInit {
     const $ = go.GraphObject.make;
 
     this.myPalette = $(go.Palette, this.paletteDiv.nativeElement, {
-      nodeTemplateMap: this.myDiagram.nodeTemplateMap,
+      nodeTemplateMap: this.diagram.nodeTemplateMap,
       model: new go.GraphLinksModel([
         { key: "Lifeline", text: "Lifeline", isGroup: true, duration: 300 },
         { key: "Action", text: "Action", isGroup: false, groupable: true }
@@ -233,60 +244,149 @@ export class SecuenciaComponent implements AfterViewInit {
       ]
     };
 
-    this.myDiagram.model = go.Model.fromJson(modelData);
+    this.diagram.model = go.Model.fromJson(modelData);
   }
   
-  loadDiagram() {
-    const savedData = localStorage.getItem(`DiagramSecuencias_${this.projectId}_v${this.currentVersion}`);
-    if (savedData) {
-      const model = go.Model.fromJson(savedData) as go.GraphLinksModel;
-      model.linkKeyProperty = "key";
-      this.myDiagram.model = model;
-      this.myDiagram.model.addChangedListener(e => { if (e.isTransactionFinished) this.saveDiagram(); });
-    }
-  }
-
-  saveDiagram() {
-    if (this.myDiagram) {
-      localStorage.setItem(
-        `DiagramSecuencias_${this.projectId}_v${this.currentVersion}`, 
-        this.myDiagram.model.toJson()
+  loadVersions() {
+      this.versionesService.getVersiones(this.ID_Proyecto).subscribe(
+        (data: any) => {
+          // Si la respuesta tiene "message" o viene vacía, asumimos que no hay versiones.
+          if (data.message || !data || data.length === 0) {
+            this.versions = [];
+          } else {
+            // Filtrar solo las versiones de tipo 2
+            this.versions = data.filter((v: any) => v.ID_Tipo === 2);
+          }
+          if (this.versions.length === 0) {
+            // No hay versiones: se crea la versión 1 automáticamente desde el frontend
+            this.versionData.json = "{}";
+            this.versionesService.postVersion(this.versionData).subscribe(
+              (nuevaVersion: any) => {
+                this.versions.push(nuevaVersion);
+                this.currentVersionId = nuevaVersion.ID_V;
+                this.loadDiagram(this.currentVersionId);
+                this.versionData.ID_V = nuevaVersion.ID_V;
+                this.versionData.ID_Tipo = 2;
+                this.versionData.ID_Proyecto = this.ID_Proyecto;
+                this.versionData.json = nuevaVersion.json;
+                this.toastr.info("Se creó automáticamente la versión 1 del diagrama");
+              },
+              (error) => {
+                console.error('Error al crear la versión inicial:', error);
+                this.toastr.error('Error al crear la versión inicial');
+              }
+            );
+          } else {
+            // Se selecciona la última versión (la más reciente) para cargarla
+            this.currentVersionId = this.versions[0].ID_V;
+            this.versionData.ID_V = this.currentVersionId;
+            this.loadDiagram(this.currentVersionId);
+          }
+        },
+        (error) => {
+          console.error('Error al cargar versiones:', error);
+          this.toastr.error('Error al cargar versiones');
+        }
       );
     }
-  }
-
-  // Gestión de versiones
-  loadVersions() {
-    const versionsKey = `DiagramSecuenciasVersions_${this.projectId}`;
-    const savedVersions = localStorage.getItem(versionsKey);
-      
-    if (savedVersions) {
-      this.versions = JSON.parse(savedVersions);
-      if (this.versions.length > 0) {
-        this.currentVersion = this.versions[this.versions.length - 1];
-      }
-    } else {
-      this.versions = ['1'];
-      this.currentVersion = '1';
-      localStorage.setItem(versionsKey, JSON.stringify(this.versions));
+  
+    createNewVersion() {
+      this.versionData.json = "{}";
+      this.versionData.ID_Proyecto = this.ID_Proyecto;
+      // Al crear nueva versión, siempre se crea del tipo 2
+      this.versionData.ID_Tipo = 2;
+      this.versionesService.postVersion(this.versionData).subscribe(
+        (data: any) => {
+          this.versions.push(data);
+          this.currentVersionId = data.ID_V;
+          // Reinicia el diagrama para la nueva versión
+          this.diagram.model = new go.GraphLinksModel({ linkKeyProperty: "key" });
+          this.toastr.success(`Nueva versión ${this.versions.length} creada`);
+          this.saveDiagram();
+          this.versionData.ID_V = data.ID_V;
+        },
+        (error) => {
+          console.error('Error al crear la versión:', error);
+          this.toastr.error('Error al crear la versión');
+        }
+      );
     }
-  }
-
-  createNewVersion() {
-    const lastVersion = parseInt(this.versions[this.versions.length - 1]);
-    const newVersion = (lastVersion + 1).toString();
-    this.currentVersion = newVersion;
-    this.versions.push(newVersion);
+  
+    guardarVersion() {
+      this.versionData.json = this.diagram.model.toJson();
+      this.versionesService.putVersion(this.versionData.ID_V, {
+        ID_Proyecto: this.versionData.ID_Proyecto,
+        ID_Tipo: this.versionData.ID_Tipo,
+        json: this.versionData.json
+      }).subscribe(
+        (data: any) => {
+          this.toastr.success('Versión guardada en la base de datos');
+          // Actualiza el objeto en el arreglo de versiones
+          const index = this.versions.findIndex(v => v.ID_V == this.versionData.ID_V);
+          if (index !== -1) {
+            this.versions[index] = data;
+          }
+        },
+        (error) => {
+          console.error('Error al guardar la versión:', error);
+          this.toastr.error('Error al guardar la versión');
+        }
+      );
+    }
+  
+    changeVersion(versionId: number) {
+      this.currentVersionId = versionId;
+      this.versionData.ID_V = versionId;
+      console.log(this.versionData.ID_V)
+      this.loadDiagram(versionId);
+      this.toastr.info(`Versión ${this.getVersionOrder(versionId)} cargada`);
+    }
+  
+    saveDiagram() {
+      if (this.diagram && this.versionData.ID_V) {
+        const json = this.diagram.model.toJson();
+        this.versionData.json = json;
+        this.versionesService.putVersion(this.versionData.ID_V, {
+          ID_Proyecto: this.ID_Proyecto,
+          ID_Tipo: this.versionData.ID_Tipo,
+          json: json
+        }).subscribe(
+          () => {},
+          (error) => {
+            console.error('Error actualizando el diagrama', error);
+          }
+        );
+      }
+    }
+    loadDiagram(versionId: number) {
+        console.log(this.versions)
+        const selectedVersion = this.versions.find(v => v.ID_V == versionId);
+        console.log(selectedVersion.json)
+        if (selectedVersion && selectedVersion.json) {
+          const model = go.Model.fromJson(selectedVersion.json) as go.GraphLinksModel;
+          model.linkKeyProperty = "key";
+          this.diagram.model = model;
+          this.diagram.model.addChangedListener(e => { if (e.isTransactionFinished) this.saveDiagram(); });
+        } else {
+          this.toastr.error('No se encontró la versión o no contiene datos');
+        }
+      }
     
-    localStorage.setItem(`DiagramSecuenciasVersions_${this.projectId}`, JSON.stringify(this.versions));
-    this.myDiagram.model = new go.GraphLinksModel({ linkKeyProperty: "key" });
-    this.saveDiagram();
-    this.toastr.success(`Nueva versión ${this.currentVersion} creada`);
-  }
-
-  changeVersion(version: string) {
-    this.currentVersion = version;
-    this.loadDiagram();
-    this.toastr.info(`Versión ${version} cargada`);
-  }
+      getVersionOrder(versionId: number): number {
+        const index = this.versions.findIndex(v => v.ID_V == versionId);
+        return index !== -1 ? index + 1 : 0;
+      }
+    
+      eliminarVersion(){
+        this.versionesService.deleteVersion(this.versionData.ID_V).subscribe(
+          (data:any) => {
+            this.versions = this.versions.filter(v => v.ID_V !== this.currentVersionId);
+            this.toastr.success('Versión eliminada');
+            if(this.versions.length > 0) {
+              this.loadDiagram(this.versions[0].ID_V);
+            }
+            this.loadVersions();
+          }
+        );
+      }
 }

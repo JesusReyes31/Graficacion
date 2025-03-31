@@ -43,4 +43,11 @@
   .diagram {
     height: calc(100% - 200px);
   }
+  
+}
+.delete{
+  background-color: #F44336 !important;
+}
+.guardar{
+  background-color: #4CAF50 !important; 
 }
