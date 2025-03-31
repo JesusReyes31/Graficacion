@@ -111,6 +111,77 @@
     </button>
   </div>
 
+  <!-- Modal para Atributo -->
+<div *ngIf="isModalVisible && modalType === 'attribute'" class="modal-overlay">
+  <div class="modal-content">
+    <h2>Agregar Atributo</h2>
+    
+    <label for="attributeName">Nombre del Atributo:</label>
+    <input type="text" id="attributeName" [(ngModel)]="attributeName" />
+    <br>
+
+    <label for="attributeType">Tipo del Atributo:</label>
+    <select id="attributeType" [(ngModel)]="attributeType">
+      <option value="string">string</option>
+      <option value="number">number</option>
+      <option value="boolean">boolean</option>
+      <option value="tipo">Otro</option>
+    </select>
+
+    <div class="modal-actions">
+      <button (click)="closeModal()">Cancelar</button>
+      <button (click)="saveModalData()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Método -->
+<div *ngIf="isModalVisible && modalType === 'method'" class="modal-overlay">
+  <div class="modal-content">
+    <h2>Agregar Método</h2>
+    
+    <!-- Nombre del Método -->
+    <label for="methodName">Nombre del Método:</label>
+    <input type="text" id="methodName" [(ngModel)]="methodName" />
+    
+    <br>
+
+    <!-- Tipo de Retorno -->
+    <label for="methodReturnType">Tipo de Retorno:</label>
+    <select id="methodReturnType" [(ngModel)]="methodReturnType">
+      <option value="string">string</option>
+      <option value="number">number</option>
+      <option value="boolean">boolean</option>
+      <option value="void">void</option>
+    </select>
+    
+    <br>
+
+    <!-- Lista de Parámetros -->
+    <h3>Parámetros</h3>
+    <div *ngFor="let param of methodParams; let i = index" class="param-row">
+      <input type="text" [(ngModel)]="param.paramName" placeholder="Nombre del Parámetro" />
+      <select [(ngModel)]="param.paramType">
+        <option value="string">string</option>
+        <option value="number">number</option>
+        <option value="boolean">boolean</option>
+        <option value="tipo">Otro</option>
+      </select>
+      <button (click)="removeParameter(i)">X</button>
+    </div>
+
+    <!-- Botón para agregar más parámetros -->
+    <button (click)="addParameter()">Agregar Parámetro</button>
+
+    <!-- Botones de acción -->
+    <div class="modal-actions">
+      <button (click)="closeModal()">Cancelar</button>
+      <button (click)="saveModalData()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
   <!-- Contenedor principal -->
   <div class="contenedor">
     <div #paletteDiv style="width: 250px; height: 60vh;"></div>

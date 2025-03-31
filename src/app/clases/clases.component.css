@@ -95,3 +95,37 @@
   .guardar{
     background-color: #4CAF50 !important; 
   }
+  /* Fondo oscuro de la superposición */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Fondo oscuro */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Asegura que el modal se muestre sobre otros elementos */
+}
+
+/* Contenedor del contenido del modal */
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  z-index: 1001; /* Asegura que el contenido del modal esté encima de la superposición */
+}
+
+/* Estilo para los botones de la acción */
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+/* Mejora la visibilidad del modal */
+.modal-overlay {
+  pointer-events: all; /* Permite que el modal reciba eventos */
+}

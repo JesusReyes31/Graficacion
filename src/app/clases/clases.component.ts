@@ -45,6 +45,18 @@ export class ClasesComponent implements AfterViewInit {
   @ViewChild('diagramDiv') diagramDiv!: ElementRef;
   @ViewChild('paletteDiv') paletteDiv!: ElementRef;
 
+  //para el modal
+  node: go.GraphObject | null = null; // Nodo actual
+  isModalVisible: boolean = false; // Si el modal está visible o no
+  modalType: string = ''; // Tipo de modal ('attribute' o 'method')
+  paramName: string = ''; // Nombre del parámetro
+  paramType: string = ''; // Tipo del parámetro
+  attributeName: string = ''; // Tipo del parámetro
+  attributeType: string = ''; // Tipo del parámetro
+  methodName: string = ''; // Tipo del parámetro
+  methodReturnType: string = ''; // Tipo del parámetro
+  methodParams: { paramName: string; paramType: string }[] = []; // Lista de parámetros
+
   selectedMultiplicity: string = '1..*';
 
   constructor(private toastr:ToastrService, private versionesService: VersionesService) {
@@ -282,31 +294,47 @@ export class ClasesComponent implements AfterViewInit {
           .add(new go.TextBlock("X"))
       );
 
-    // Template para clases con atributos y métodos
-    const classWithAttributesAndMethodsTemplate = $(go.Node, "Auto", commonNodeProps,
-      $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
-      $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
-        $(go.Panel, "Auto", { row: 0, margin: 4 },
-          $(go.TextBlock, { 
-            font: "bold 16px sans-serif", isMultiline: false, editable: true, 
-            textAlign: "center", stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) 
-          }, new go.Binding("text", "name").makeTwoWay())
-        ),
-        // Panel de atributos
-        $(go.Panel, "Vertical", { row: 1, margin: 4, stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left },
-          new go.Panel('Vertical', { name: 'PROPERTIES', stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left, itemTemplate: propertyTemplate}).bind('itemArray', 'properties'),
-          go.GraphObject.build("Button", { margin: 4, click: addNewAttribute })
-            .add(new go.TextBlock("Agregar Atributo"))
-        ),
-        // Panel de métodos
-        $(go.Panel, "Vertical", { row: 2, margin: 4, stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left },
-          new go.Panel('Vertical', { name: 'METHODS', stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left, itemTemplate: methodTemplate}).bind('itemArray', 'methods'),
-          go.GraphObject.build("Button", { margin: 4, click: addNewMethod })
-            .add(new go.TextBlock("Agregar Método"))
+      const classWithAttributesAndMethodsTemplate = $(go.Node, "Auto", commonNodeProps,
+        $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
+        $(go.Panel, "Table", { defaultRowSeparatorStroke: "black", stretch: go.GraphObject.Fill },
+          // Nombre de la clase
+          $(go.Panel, "Auto", { row: 0, margin: 4 },
+            $(go.TextBlock, { 
+              font: "bold 16px sans-serif", isMultiline: false, editable: true, 
+              textAlign: "center", stretch: go.GraphObject.Fill, minSize: new go.Size(100, 20) 
+            }, new go.Binding("text", "name").makeTwoWay())
+          ),
+          // Panel de atributos
+          $(go.Panel, "Vertical", { row: 1, margin: 4, stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left },
+            $(go.Panel, "Vertical", { 
+              name: "PROPERTIES", 
+              stretch: go.Stretch.Horizontal, 
+              defaultAlignment: go.Spot.Left, 
+              itemTemplate: propertyTemplate 
+            }).bind("itemArray", "properties"),
+            $("Button", 
+              { 
+                margin: 4, 
+                click: (e: go.InputEvent, obj: go.GraphObject) => this.openAttributeModal(e, obj) 
+              },
+              $("TextBlock", "Agregar Atributo")
+            )            
+          ),
+          // Panel de métodos
+          $(go.Panel, "Vertical", { row: 2, margin: 4, stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left },
+            $(go.Panel, "Vertical", { 
+              name: "METHODS", 
+              stretch: go.Stretch.Horizontal, 
+              defaultAlignment: go.Spot.Left, 
+              itemTemplate: methodTemplate 
+            }).bind("itemArray", "methods"),
+            $("Button", 
+              { margin: 4, click: (e: go.InputEvent, obj: go.GraphObject) => this.openMethodModal(e, obj) }, 
+              $("TextBlock", "Agregar Método")
+            )
+          )
         )
-      )
-    );
-
+      );      
     return new go.Map<string, go.Node>().set("classWithAttributesAndMethods", classWithAttributesAndMethodsTemplate);
   }
 
@@ -624,4 +652,82 @@ private createLink(relationshipType: string, symbol: string = "", dashed: boolea
           }
         );
       }
+
+      //modal
+      openAttributeModal(e: go.InputEvent, obj: go.GraphObject) {
+        const node = obj.part;
+        if (!node || !node.diagram) return;
+      
+        this.node = node;  // Guardamos el nodo para usarlo en el guardado
+        this.diagram = node.diagram;  // Guardamos el diagrama
+        this.modalType = "attribute"; // Indicamos que es un atributo
+      
+        // Establecemos los valores iniciales del atributo
+        this.paramName = "atributo";
+        this.paramType = "tipo";
+      
+        // Hacemos visible el modal
+        this.isModalVisible = true;
+      }
+      
+      openMethodModal(e: go.InputEvent, obj: go.GraphObject) {
+        const node = obj.part;
+        if (!node || !node.diagram) return;
+      
+        this.node = node;  // Guardamos el nodo para usarlo en el guardado
+        this.diagram = node.diagram;  // Guardamos el diagrama
+        this.modalType = "method"; // Indicamos que es un método
+      
+        // Establecemos los valores iniciales del método
+        this.paramName = "par";
+        this.paramType = "tipo";
+      
+        // Hacemos visible el modal
+        this.isModalVisible = true;
+      }
+      
+      saveModalData() {
+        if (!this.node || !this.diagram) return;
+      
+        const data = (this.node as go.Node).data; // Cast explícito a go.Node
+        if (!data) return;
+        console.log('paramname', this.paramName,' paramtype ', this.paramType)
+      
+        // Ejecutamos la acción dependiendo del tipo de modal (atributo o método)
+        this.diagram.model.commit(m => {
+          if (this.modalType === "attribute" && Array.isArray(data.properties)) {
+            // Guardamos un nuevo atributo
+            m.set(data, "properties", [...data.properties, {
+              visibility: "+",
+              name: this.paramName,
+              type: this.paramType,
+              default: null,
+              scope: "instance"
+            }]);
+          } else if (this.modalType === "method" && Array.isArray(data.methods)) {
+            // Guardamos un nuevo método
+            m.set(data, "methods", [...data.methods, {
+              visibility: "+",
+              name: this.methodName,
+              parameters: this.methodParams, // Usar la lista completa de parámetros
+              type: this.methodReturnType
+            }]);
+          }
+        }, "added " + this.modalType);  // El mensaje de la acción que se realizó (atributo o método)
+      
+        this.closeModal();  // Cerramos el modal después de guardar
+      }
+      
+      closeModal() {
+        this.isModalVisible = false;  // Ocultamos el modal
+      }
+      addParameter() {
+        this.methodParams.push({ paramName: "", paramType: "string" });
+      }
+    
+      // Eliminar un parámetro
+      removeParameter(index: number) {
+        this.methodParams.splice(index, 1);
+      }
+      
 }
