@@ -55,10 +55,16 @@ export class ClasesComponent implements AfterViewInit {
   attributeType: string = ''; // Tipo del parámetro
   methodName: string = ''; // Tipo del parámetro
   methodReturnType: string = ''; // Tipo del parámetro
-  methodParams: { paramName: string; paramType: string }[] = []; // Lista de parámetros
+  methodParams: { paramName: string, paramType: string, paramVisibility: string }[] = []; // Lista de parámetros
+  isEditing: boolean = false;
+  originalAttributeName: string = ""; // <-- Agrega esto
+  originalMethodName: string = ""; // <-- Agrega esto si también editas métodos
+  methodVisibility: string = "+";  
+  attributeVisibility: string = "";
+
 
   selectedMultiplicity: string = '1..*';
-
+  
   constructor(private toastr:ToastrService, private versionesService: VersionesService) {
     this.projectId = sessionStorage.getItem('proyecto') || '';
     this.ID_Proyecto = parseInt(sessionStorage.getItem('ID_Proyecto') || '0');
@@ -139,21 +145,22 @@ export class ClasesComponent implements AfterViewInit {
     const textEditedHandler = (tb: go.TextBlock) => { if (tb.text.trim() === "") tb.text = "-"; };
     
     const toggleVisibility = (e: go.InputEvent, obj: go.GraphObject) => { 
+      // Evita ejecutar si es la paleta
+      if (!obj.part || !obj.part.diagram || obj.part.diagram instanceof go.Palette) return;
       const panel = obj.panel;
       if (!panel || !panel.part || !panel.part.diagram) return;
-      
+    
       const data = panel.data;
       if (!data || !data.hasOwnProperty("visibility")) return;
-      
-      // Ciclo de visibilidad: +, -, #, espacio
-    let newVisibility = "+";
-    if (data.visibility === "+") newVisibility = "-";
-    else if (data.visibility === "-") newVisibility = "#";
+    
+      let newVisibility = "+";
+      if (data.visibility === "+") newVisibility = "-";
+      else if (data.visibility === "-") newVisibility = "#";
       else if (data.visibility === "#") newVisibility = " ";
-      
+    
       const part = panel.part;
       if (!part || !part.diagram) return;
-      
+    
       part.diagram.model.commit(m => {
         m.set(data, "visibility", newVisibility);
         if (part.data.methods) {
@@ -165,53 +172,9 @@ export class ClasesComponent implements AfterViewInit {
       }, "toggle visibility");
     };
     
-    const addNewAttribute = (e: go.InputEvent, obj: go.GraphObject) => {
-      const node = obj.panel?.part;
-      if (!node || !node.diagram) return;
-      
-      const data = node.data;
-      if (!data || !Array.isArray(data.properties)) return;
-      
-      node.diagram.model.commit(m => {
-        m.set(data, "properties", [...data.properties, {visibility: "+", name: "Atributo", type: "tipo", default: null, scope: "instance"}]);
-      }, "added attribute");
-    };
-    
-    const addNewMethod = (e: go.InputEvent, obj: go.GraphObject) => {
-      const node = obj.panel?.part;
-      if (!node || !node.diagram) return;
-      
-      const data = node.data;
-      if (!data || !Array.isArray(data.methods)) return;
-      
-      node.diagram.model.commit(m => {
-        m.set(data, "methods", [...data.methods, { visibility: "+", name: "Metodo",  parameters: [{ paramName: "par", paramType: "tipo" }],  type: "tipo"}]);
-      }, "added method");
-    };
-    
-    const addNewParameter = (e: go.InputEvent, obj: go.GraphObject) => {
-      const methodPanel = obj.panel;
-      if (!methodPanel || !methodPanel.part) return;
-      
-      const node = methodPanel.part;
-      const data = node.data as NodeData;
-      if (!data || !Array.isArray(data.methods)) return;
-      
-      const methodData = methodPanel.data as Method;
-      if (!methodData) return;
-      
-      const methodIndex = data.methods.findIndex(m => m === methodData);
-      if (methodIndex === -1) return;
-      
-      node.diagram?.model.commit(m => {
-        const updatedMethods = data.methods.map((method, index) =>
-          index === methodIndex? { ...method, parameters: [...(method.parameters || []), { paramName: "par", paramType: "tipo" }] } : method
-        );
-        m.set(data, "methods", updatedMethods);
-      }, "added parameter");
-    };
     
     const removeAttribute = (e: go.InputEvent, obj: go.GraphObject) => {
+      if (!obj.part || !obj.part.diagram || obj.part.diagram instanceof go.Palette) return;
       const panel = obj.panel;
       if (!panel || !panel.part || !panel.part.diagram) return;
       
@@ -226,6 +189,7 @@ export class ClasesComponent implements AfterViewInit {
     };
     
     const removeMethod = (e: go.InputEvent, obj: go.GraphObject) => {
+      if (!obj.part || !obj.part.diagram || obj.part.diagram instanceof go.Palette) return;
       const panel = obj.panel;
       if (!panel || !panel.part || !panel.part.diagram) return;
       
@@ -241,58 +205,103 @@ export class ClasesComponent implements AfterViewInit {
 
     // Templates para componentes reutilizables
     const propertyTemplate = new go.Panel('Horizontal')
-      .add(
-        go.GraphObject.build("Button", { click: toggleVisibility, margin: 4, width: 20, height: 20 })
-          .add(new go.TextBlock().bind('text', 'visibility').set({ alignment: go.Spot.Center })),
-        new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
-          .bindTwoWay('text', 'name')
-          .bind('isUnderline', 'scope', s => s[0] === 'c'),
-        new go.TextBlock('').bind('text', 'type', t => t ? ': ' : ''),
-        new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
-          .bindTwoWay('text', 'type'),
-        new go.TextBlock({ isMultiline: false, editable: false })
-          .bind('text', 'default', s => s ? ' = ' + s : ''),
-        go.GraphObject.build("Button", { margin: 4, click: removeAttribute, width: 20, height: 20 })
-          .add(new go.TextBlock("X"))
-      );
+  .add(
+    go.GraphObject.build("Button", { click: toggleVisibility, margin: 4, width: 20, height: 20, 
+      toolTip: $("ToolTip", 
+        $(go.TextBlock, { margin: 4 })
+          .bind("text", "visibility", (v: string) => {
+            switch (v) {
+              case "+": return "Público";
+              case "-": return "Privado";
+              case "#": return "Protegido";
+              case " ": return "Espacio";
+              default: return "Desconocido";
+            }
+          })
+      )
+    }).add(new go.TextBlock().bind('text', 'visibility').set({ alignment: go.Spot.Center })),
 
-    const methodTemplate = new go.Panel('Horizontal')
+    new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
+      .bindTwoWay('text', 'name')
+      .bind('isUnderline', 'scope', s => s[0] === 'c'),
+
+    new go.TextBlock('').bind('text', 'type', t => t ? ': ' : ''),
+
+    new go.TextBlock({ isMultiline: false, editable: false, textEdited: textEditedHandler })
+      .bindTwoWay('text', 'type'),
+
+    new go.TextBlock({ isMultiline: false, editable: false })
+      .bind('text', 'default', s => s ? ' = ' + s : ''),
+
+    go.GraphObject.build("Button", { margin: 4, click: removeAttribute, width: 20, height: 20,
+      toolTip: $("ToolTip", $(go.TextBlock, "Eliminar atributo", { margin: 4 }))
+    }).add(new go.TextBlock("X")),
+
+    go.GraphObject.build("Button", { margin: 4, click: (e: go.InputEvent, obj: go.GraphObject) => this.openAttributeModal(e, obj), width: 20, height: 20,
+      toolTip: $("ToolTip", $(go.TextBlock, "Editar atributo", { margin: 4 }))
+    }).add(new go.TextBlock("✏️").set({ alignment: go.Spot.Center })) // Usando un símbolo de lápiz
+  );
+
+  
+
+  const methodTemplate = new go.Panel('Horizontal')
+  .add(
+    go.GraphObject.build("Button", { click: toggleVisibility, margin: 4, width: 20, height: 20, 
+      toolTip: $("ToolTip", 
+        $(go.TextBlock, { margin: 4 })
+          .bind("text", "visibility", (v: string) => {
+            switch (v) {
+              case "+": return "Público";
+              case "-": return "Privado";
+              case "#": return "Protegido";
+              case "~": return "Paquete";
+              default: return "Desconocido";
+            }
+          })
+      )
+    }).add(new go.TextBlock().bind('text', 'visibility').set({ alignment: go.Spot.Center })),
+
+    new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
+      .bindTwoWay('text', 'name')
+      .bind('isUnderline', 'scope', (s: string) => s[0] === 'c'),
+
+    new go.Panel('Horizontal', { margin: 2 })
       .add(
-        go.GraphObject.build("Button", { click: toggleVisibility, margin: 4, width: 20, height: 20 })
-          .add(new go.TextBlock().bind('text', 'visibility').set({ alignment: go.Spot.Center })),
-        new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
-          .bindTwoWay('text', 'name')
-          .bind('isUnderline', 'scope', s => s[0] === 'c'),
-        new go.Panel('Horizontal', { margin: 2 })
-          .add(
-            new go.TextBlock('('),
-            new go.Panel('Horizontal', {
-              itemTemplate: new go.Panel('Horizontal')
-                .add(
-                  new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
-                    .bindTwoWay('text', 'paramName'),
-                  new go.TextBlock(': '),
-                  new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
-                    .bindTwoWay('text', 'paramType'),
-                  new go.TextBlock(',').bind('visible', 'parameters', (parameters, panel) => {
-                    if (!parameters || !Array.isArray(parameters)) return false;
-                    const parentPanel = panel.panel;
-                    if (!parentPanel || !parentPanel.itemArray) return false;
-                    const index = parentPanel.itemArray.indexOf(panel.data);
-                    return index !== -1 && index < parentPanel.itemArray.length - 1;
-                  })
-                )
-            }).bind('itemArray', 'parameters'),
-            new go.TextBlock(')')
-          ),
-        go.GraphObject.build("Button", { margin: 4, click: addNewParameter, width: 20, height: 20 })
-          .add(new go.TextBlock("+")),
-        new go.TextBlock('').bind('text', 'type', t => t ? ': ' : ''),
-        new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
-          .bindTwoWay('text', 'type'),
-        go.GraphObject.build("Button", { margin: 4, click: removeMethod, width: 20, height: 20 })
-          .add(new go.TextBlock("X"))
-      );
+        new go.TextBlock('('),
+        new go.Panel('Horizontal', {
+          itemTemplate: new go.Panel('Horizontal')
+            .add(
+              new go.TextBlock({ isMultiline: false, editable: true, textEdited: textEditedHandler })
+                .bindTwoWay('text', 'paramName'),
+              new go.TextBlock(': '),
+              new go.TextBlock({ isMultiline: false, editable: false, textEdited: textEditedHandler })
+                .bindTwoWay('text', 'paramType'),
+              new go.TextBlock(',').bind('visible', 'parameters', (parameters: any[], panel: go.Panel) => {
+                if (!parameters || !Array.isArray(parameters)) return false;
+                const parentPanel = panel.panel;
+                if (!parentPanel || !parentPanel.itemArray) return false;
+                const index = parentPanel.itemArray.indexOf(panel.data);
+                return index !== -1 && index < parentPanel.itemArray.length - 1;
+              })
+            )
+        }).bind('itemArray', 'parameters'),
+        new go.TextBlock(')')
+      ),
+
+    new go.TextBlock('').bind('text', 'type', (t: string) => t ? ': ' : ''),
+
+    new go.TextBlock({ isMultiline: false, editable: false, textEdited: textEditedHandler })
+      .bindTwoWay('text', 'type'),
+
+    go.GraphObject.build("Button", { margin: 4, click: removeMethod, width: 20, height: 20,
+      toolTip: $("ToolTip", $(go.TextBlock, "Eliminar método", { margin: 4 }))
+    }).add(new go.TextBlock("X")),
+
+    go.GraphObject.build("Button", { margin: 4, click: (e: go.InputEvent, obj: go.GraphObject) => this.openMethodModal(e, obj), width: 20, height: 20,
+      toolTip: $("ToolTip", $(go.TextBlock, "Editar método", { margin: 4 }))
+    }).add(new go.TextBlock("✏️").set({ alignment: go.Spot.Center })) // Usando un símbolo de lápiz
+  );
+
 
       const classWithAttributesAndMethodsTemplate = $(go.Node, "Auto", commonNodeProps,
         $(go.Shape, "Rectangle", { strokeWidth: 1, stroke: "black", fill: "white" }),
@@ -307,7 +316,7 @@ export class ClasesComponent implements AfterViewInit {
           // Panel de atributos
           $(go.Panel, "Vertical", { row: 1, margin: 4, stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left },
             $(go.Panel, "Vertical", { 
-              name: "PROPERTIES", 
+              name: "properties", 
               stretch: go.Stretch.Horizontal, 
               defaultAlignment: go.Spot.Left, 
               itemTemplate: propertyTemplate 
@@ -323,7 +332,7 @@ export class ClasesComponent implements AfterViewInit {
           // Panel de métodos
           $(go.Panel, "Vertical", { row: 2, margin: 4, stretch: go.Stretch.Horizontal, defaultAlignment: go.Spot.Left },
             $(go.Panel, "Vertical", { 
-              name: "METHODS", 
+              name: "methods", 
               stretch: go.Stretch.Horizontal, 
               defaultAlignment: go.Spot.Left, 
               itemTemplate: methodTemplate 
@@ -653,76 +662,279 @@ private createLink(relationshipType: string, symbol: string = "", dashed: boolea
         );
       }
 
-      //modal
-      openAttributeModal(e: go.InputEvent, obj: go.GraphObject) {
-        const node = obj.part;
-        if (!node || !node.diagram) return;
+      openAttributeModal(e: go.InputEvent, obj?: go.GraphObject) {
+         // Evita abrir el modal si estamos en la paleta
+      if (!obj || !obj.part || !obj.part.diagram || obj.part.diagram instanceof go.Palette) return;
+
+        console.log("openAttributeModal se ha llamado");
       
-        this.node = node;  // Guardamos el nodo para usarlo en el guardado
-        this.diagram = node.diagram;  // Guardamos el diagrama
-        this.modalType = "attribute"; // Indicamos que es un atributo
+        this.modalType = "attribute";
+        this.isModalVisible = true;
       
-        // Establecemos los valores iniciales del atributo
-        this.paramName = "atributo";
-        this.paramType = "tipo";
+        if (!obj) {
+          // Modo CREACIÓN
+          console.log("Modo: Creación de Atributo");
+          this.isEditing = false; // Indicar que estamos creando un nuevo atributo
+          this.attributeName = "";
+          this.attributeType = "string"; // Valor por defecto
+          this.attributeVisibility = ""; // Valor por defecto para la visibilidad
+          this.originalAttributeName = ""; // Aseguramos que se limpia en creación
+          return;
+        }
       
-        // Hacemos visible el modal
+        // Modo EDICIÓN
+        const node = obj.part as go.Node;
+        this.node = node;
+        if (!node) {
+          console.error("El objeto no pertenece a un nodo válido");
+          return;
+        }
+      
+        const panel = obj.panel;
+        if (!panel) {
+          console.error("No se pudo obtener el panel del atributo");
+          return;
+        }
+      
+        console.log("obj:", obj);  // Verifica el objeto completo
+        console.log("panel:", panel);  // Verifica el panel
+      
+        const attribute = panel.data;
+        console.log("attribute:", attribute);  // Verifica el atributo
+      
+        if ((!attribute || !attribute.name)) {
+          console.error("No se pudo obtener el atributo seleccionado");
+          return;
+        }
+      
+        console.log("Modo: Edición de Atributo", attribute);
+        this.isEditing = true; // Indicar que estamos editando un atributo
+        this.diagram = node.diagram!;
+      
+        // Asignamos el nombre original para poder hacer la búsqueda de edición
+        this.originalAttributeName = attribute.name;
+        
+        // Cargar datos para edición, incluyendo visibilidad
+        this.editAttributeData(attribute);
+      }
+      
+      editAttributeData(attribute: any) {
+        console.log("📌 Cargando datos para edición:", attribute);
+      
+        if (!attribute) {
+          console.error("⚠ No se pueden cargar los datos del atributo");
+          return;
+        }
+      
+        this.isEditing = true;
+        this.originalAttributeName = attribute.name; // Guardamos el nombre original antes de cambios
+        this.attributeName = attribute.name || "";
+        this.attributeType = attribute.type || "";
+        this.attributeVisibility = attribute.visibility || "+"; // Cargar visibilidad del atributo
+      
         this.isModalVisible = true;
       }
       
+    
       openMethodModal(e: go.InputEvent, obj: go.GraphObject) {
+         // Evita abrir el modal si estamos en la paleta
+        if (!obj || !obj.part || !obj.part.diagram || obj.part.diagram instanceof go.Palette) return;
+
         const node = obj.part;
         if (!node || !node.diagram) return;
       
         this.node = node;  // Guardamos el nodo para usarlo en el guardado
         this.diagram = node.diagram;  // Guardamos el diagrama
         this.modalType = "method"; // Indicamos que es un método
+        this.isModalVisible = true;
       
         // Establecemos los valores iniciales del método
-        this.paramName = "par";
-        this.paramType = "tipo";
+        this.methodName = "";
+        this.methodParams = []; // Lista vacía para los parámetros
+        this.methodReturnType = ""; // Valor por defecto
+        this.isEditing = false;
+        this.methodVisibility = ""; // Valor por defecto de la visibilidad del método
       
-        // Hacemos visible el modal
+        if (obj) {
+          // Modo EDICIÓN: Si se pasa un objeto, es para editar un método existente
+          const panel = obj.panel;
+          if (!panel) {
+            console.error("No se pudo obtener el panel del método");
+            return;
+          }
+      
+          const method = panel.data;
+          if (!method || !method.name) {
+            console.error("No se pudo obtener el método seleccionado");
+            return;
+          }
+      
+          // Establecer los valores cuando se está editando
+          this.isEditing = true;
+          this.originalMethodName = method.name; // Guardamos el nombre original para edición
+          this.methodName = method.name || "";
+          this.methodParams = method.parameters || []; // Cargamos los parámetros del método
+          this.methodReturnType = method.type || "void"; // Asignamos el tipo de retorno del método
+          this.methodVisibility = method.visibility || "+"; // Asignamos la visibilidad del método al valor cargado
+      
+          // Para cada parámetro, asignamos la visibilidad cargada si está presente
+          this.methodParams = this.methodParams.map(param => ({
+            ...param,
+            paramVisibility: param.paramVisibility || "+" // Asignamos visibilidad de parámetro por defecto si no se encuentra
+          }));
+        }
+      
         this.isModalVisible = true;
       }
       
+      
+
+      
       saveModalData() {
-        if (!this.node || !this.diagram) return;
-      
-        const data = (this.node as go.Node).data; // Cast explícito a go.Node
-        if (!data) return;
-        console.log('paramname', this.paramName,' paramtype ', this.paramType)
-      
-        // Ejecutamos la acción dependiendo del tipo de modal (atributo o método)
+        if (!this.node) {
+          console.error("⚠ No se encontró el nodo.");
+          return;
+        }
+        if (!this.diagram) {
+          console.error("⚠ No se encontró el diagrama.");
+          return;
+        }
+    
+        const data = (this.node as go.Node).data;
+        if (!data) {
+          console.error("⚠ No se encontró data en el nodo.");
+          return;
+        }
+    
+        console.log("Datos del nodo:", data);
+        console.log("Guardando datos...");
+        console.log("Modo:", this.isEditing ? "Edición" : "Creación");
+    
+        // Verificación de la existencia de 'properties' y 'methods'
+        if (!Array.isArray(data.properties)) {
+          console.error("⚠ No se encontraron propiedades válidas en el nodo.");
+          return;
+        }
+        if (!Array.isArray(data.methods)) {
+          console.error("⚠ No se encontraron métodos válidos en el nodo.");
+          return;
+        }
+    
         this.diagram.model.commit(m => {
-          if (this.modalType === "attribute" && Array.isArray(data.properties)) {
-            // Guardamos un nuevo atributo
-            m.set(data, "properties", [...data.properties, {
-              visibility: "+",
-              name: this.paramName,
-              type: this.paramType,
-              default: null,
-              scope: "instance"
-            }]);
-          } else if (this.modalType === "method" && Array.isArray(data.methods)) {
-            // Guardamos un nuevo método
-            m.set(data, "methods", [...data.methods, {
-              visibility: "+",
-              name: this.methodName,
-              parameters: this.methodParams, // Usar la lista completa de parámetros
-              type: this.methodReturnType
-            }]);
+
+           // Para los atributos
+            if (this.modalType === "attribute") {
+              if (this.isEditing) {
+                console.log("🔍 Buscando atributo para editar...");
+
+                if (!this.originalAttributeName && this.isEditing) {
+                  console.error("⚠ No hay un nombre original definido para buscar el atributo.");
+                  return;
+                }
+
+                const attrIndex = data.properties.findIndex(
+                  (attr: { name: string }) => attr.name === this.originalAttributeName
+                );
+
+                if (this.isEditing) {
+                  console.log("✅ Atributo encontrado en el índice:", attrIndex);
+
+                  const updatedAttributes = [...data.properties];
+                  updatedAttributes[attrIndex] = {
+                    ...updatedAttributes[attrIndex], // Mantener otras propiedades
+                    name: this.attributeName,
+                    type: this.attributeType,
+                    visibility: this.attributeVisibility // Guardamos la visibilidad
+                  };
+
+                  m.set(data, "properties", updatedAttributes);
+                  console.log("✔ Atributo actualizado correctamente.");
+                } else {
+                  console.error("⚠ No se encontró el atributo para editar.");
+                }
+              } else {
+                console.log("➕ Agregando nuevo atributo...");
+                const newAttribute = {
+                  visibility: this.attributeVisibility, // Visibilidad del nuevo atributo
+                  name: this.attributeName,
+                  type: this.attributeType,
+                  scope: "instance"
+                };
+
+                m.set(data, "properties", [...data.properties, newAttribute]);
+                console.log("✔ Nuevo atributo agregado.");
+              }
+            }
+
+          // Para los métodos
+          if (this.modalType === "method") {
+            if (this.isEditing) {
+              console.log("🔍 Buscando método para editar...");
+    
+              if (!this.originalMethodName && this.isEditing) {
+                console.error("⚠ No hay un nombre original definido para buscar el método.");
+                return;
+              }
+    
+              const methodIndex = data.methods.findIndex(
+                (method: { name: string }) => method.name === this.originalMethodName
+              );
+    
+              if (methodIndex !== -1) {
+                console.log("✅ Método encontrado en el índice:", methodIndex);
+    
+                const updatedMethods = [...data.methods];
+                updatedMethods[methodIndex] = {
+                  ...updatedMethods[methodIndex], // Mantener otras propiedades
+                  name: this.methodName,
+                  parameters: this.methodParams,
+                  type: this.methodReturnType,
+                  visibility: this.methodVisibility // Guardamos la visibilidad
+                };
+    
+                m.set(data, "methods", updatedMethods);
+                console.log("✔ Método actualizado correctamente.");
+              } else {
+                console.error("⚠ No se encontró el método para editar.");
+              }
+            } else {
+              console.log("➕ Agregando nuevo método...");
+              const newMethod = {
+                visibility: this.methodVisibility, // Visibilidad del nuevo método
+                name: this.methodName,
+                parameters: this.methodParams,
+                type: this.methodReturnType
+              };
+    
+              m.set(data, "methods", [...data.methods, newMethod]);
+              console.log("✔ Nuevo método agregado.");
+            }
           }
-        }, "added " + this.modalType);  // El mensaje de la acción que se realizó (atributo o método)
-      
-        this.closeModal();  // Cerramos el modal después de guardar
+        }, this.isEditing ? "edited method" : "added method");
+    
+        // Aseguramos que el modal se cierra correctamente
+        console.log("🚪 Cerrando modal...");
+        this.closeModal();
       }
+      
+      
       
       closeModal() {
         this.isModalVisible = false;  // Ocultamos el modal
+        this.attributeName = "";
+        this.attributeType = "";
+        this.originalAttributeName = "";
+        
+        this.methodName = "";
+        this.methodReturnType = "";
+        
+        this.methodReturnType = "";
+        this.isEditing = false; 
+        this.attributeVisibility = "";
       }
+
       addParameter() {
-        this.methodParams.push({ paramName: "", paramType: "string" });
+        this.methodParams.push({ paramName: "", paramType: "string", paramVisibility: "+" });  // Valor por defecto es público
       }
     
       // Eliminar un parámetro
