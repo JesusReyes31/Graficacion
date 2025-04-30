@@ -65,7 +65,7 @@ export class CUComponent implements OnInit, AfterViewInit {
       "layout.isOngoing": false,
       "layout.isInitial": false
     });
-    this.diagram.scale = 0.6; // Ajusta el valor según el tamaño deseado
+    // this.diagram.scale = 0.6; // Ajusta el valor según el tamaño deseado
 
     this.diagram.nodeTemplateMap = this.getNodeTemplateMap();
     this.diagram.groupTemplate = this.getGroupTemplate();

@@ -303,6 +303,8 @@ export class ComponentesComponent implements OnInit {
       {
         maxSelectionCount: 1,
         nodeTemplateMap: this.diagram.nodeTemplateMap,
+        initialContentAlignment: go.Spot.Center,
+        contentAlignment:go.Spot.Center,
         model: new go.GraphLinksModel(
           [
             { 

@@ -236,7 +236,134 @@
   </div>
 </div>
 
-
+<!-- Modal para edición de clase completa -->
+<div *ngIf="isModalVisible && modalType === 'class'" class="modal-overlay">
+  <div class="modal-compact">
+    <h2>Editar Clase</h2>
+    
+    <!-- Nombre de la clase -->
+    <div class="form-group">
+      <label for="className">Nombre de la clase:</label>
+      <input id="className" type="text" [(ngModel)]="className" class="form-control">
+    </div>
+    
+    <div class="modal-content-scroll">
+      <!-- Sección de atributos con toggle -->
+      <div class="section-header" (click)="toggleSection('attributes')">
+        <span class="section-title">Atributos</span>
+        <span class="toggle-icon">{{ showAttributes ? '▼' : '►' }}</span>
+      </div>
+      
+      <div class="section-content" [ngClass]="{'show': showAttributes}">
+        <div *ngFor="let attr of classAttributes; let i = index" class="attribute-row">
+          <select [(ngModel)]="attr.visibility">
+            <option value="+">+ (Público)</option>
+            <option value="-">- (Privado)</option>
+            <option value="#"># (Protegido)</option>
+            <option value=" "> (Default)</option>
+          </select>
+          <input type="text" [(ngModel)]="attr.name" placeholder="Nombre">
+          <select [(ngModel)]="attr.type">
+            <option value="string">string</option>
+            <option value="number">number</option>
+            <option value="boolean">boolean</option>
+            <option value="char">char</option>
+            <option value="float">float</option>
+            <option value="double">double</option>
+            <option value="object">object</option>
+            <option value="Array">Array</option>
+            <option value="Map">Map</option>
+            <option value="Set">Set</option>
+            <option value="Date">Date</option>
+            <option value="any">any</option>
+            <option value="enum">enum</option>
+            <option value="tipo">otro</option>
+          </select>
+          <button (click)="removeClassAttribute(i)" class="eliminar">×</button>
+        </div>
+        <button (click)="addClassAttribute()" class="agregar">Agregar Atributo</button>
+      </div>
+      
+      <!-- Sección de métodos con toggle -->
+      <div class="section-header" (click)="toggleSection('methods')">
+        <span class="section-title">Métodos</span>
+        <span class="toggle-icon">{{ showMethods ? '▼' : '►' }}</span>
+      </div>
+      
+      <div class="section-content" [ngClass]="{'show': showMethods}">
+        <div *ngFor="let method of classMethods; let i = index" class="method-container">
+          <div class="method-header" (click)="toggleMethod(i)">
+            <div class="method-info">
+              <select [(ngModel)]="method.visibility" (click)="$event.stopPropagation()">
+                <option value="+">+ (Público)</option>
+                <option value="-">- (Privado)</option>
+                <option value="#"># (Protegido)</option>
+                <option value=" "> (Default)</option>
+              </select>
+              <input type="text" [(ngModel)]="method.name" 
+                    placeholder="Nombre" 
+                    (click)="$event.stopPropagation()">
+              <select [(ngModel)]="method.type" (click)="$event.stopPropagation()">
+                <option value="void">void</option>
+                <option value="string">string</option>
+                <option value="number">number</option>
+                <option value="boolean">boolean</option>
+                <option value="char">char</option>
+                <option value="float">float</option>
+                <option value="double">double</option>
+                <option value="object">object</option>
+                <option value="Array">Array</option>
+                <option value="Map">Map</option>
+                <option value="Set">Set</option>
+                <option value="Date">Date</option>
+                <option value="any">any</option>
+                <option value="Promise">Promise</option>
+                <option value="tipo">otro</option>
+              </select>
+            </div>
+            <div class="method-actions">
+              <span class="toggle-icon">{{ openMethods[i] ? '▼' : '►' }}</span>
+              <button (click)="removeClassMethod(i); $event.stopPropagation()" class="eliminar">×</button>
+            </div>
+          </div>
+          
+          <!-- Parámetros del método (desplegables) -->
+          <div class="method-params" [ngClass]="{'show': openMethods[i]}">
+            <h4>Parámetros</h4>
+            <div *ngFor="let param of method.parameters; let j = index" class="param-row">
+              <input type="text" [(ngModel)]="param.paramName" placeholder="Nombre">
+              <select [(ngModel)]="param.paramType">
+                <option value="string">string</option>
+                <option value="number">number</option>
+                <option value="boolean">boolean</option>
+                <option value="char">char</option>
+                <option value="float">float</option>
+                <option value="double">double</option>
+                <option value="object">object</option>
+                <option value="Array">Array</option>
+                <option value="Map">Map</option>
+                <option value="Set">Set</option>
+                <option value="Date">Date</option>
+                <option value="any">any</option>
+                <option value="enum">enum</option>
+                <option value="tipo">otro</option>
+              </select>
+              <button (click)="removeClassMethodParameter(i, j)" class="eliminar">×</button>
+            </div>
+            <button (click)="addClassMethodParameter(i)" class="agregar-param">Agregar Parámetro</button>
+          </div>
+        </div>
+        <button (click)="addClassMethod()" class="agregar">Agregar Método</button>
+      </div>
+    </div>
+    
+    <!-- Botones de acción -->
+    <div class="modal-actions">
+      <button (click)="closeModal()">Cancelar</button>
+      <button (click)="saveModalData()">Guardar</button>
+    </div>
+  </div>
+</div>
 
   <!-- Contenedor principal -->
   <div class="contenedor">

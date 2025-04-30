@@ -214,6 +214,8 @@ export class SecuenciaComponent implements AfterViewInit {
 
     this.myPalette = $(go.Palette, this.paletteDiv.nativeElement, {
       nodeTemplateMap: this.diagram.nodeTemplateMap,
+      initialContentAlignment: go.Spot.Center,
+      contentAlignment:go.Spot.Center,
       model: new go.GraphLinksModel([
         { key: "Lifeline", text: "Lifeline", isGroup: true, duration: 300 },
         { key: "Action", text: "Action", isGroup: false, groupable: true }
