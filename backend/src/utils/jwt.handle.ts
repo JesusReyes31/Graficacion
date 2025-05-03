@@ -1,8 +1,8 @@
 import{ sign, verify }from "jsonwebtoken";
-import { user } from "../models/users.model";
+import { Usuarios } from "../models/usuarios.model";
 const JWT_SECRET =process.env.JWT_SECRET || "secreto.01";
 
-const generateToken = (User:user) =>{
+const generateToken = (User:Usuarios) =>{
     const jwt = sign({User}, JWT_SECRET,{
         expiresIn:"24h",
     });

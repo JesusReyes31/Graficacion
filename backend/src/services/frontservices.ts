@@ -24,8 +24,6 @@ export const createProjectFront = (req: Request, res: Response) => {
                 res.status(500).json({ message: "Error creando el backend." });
                 return;
             }
-
-            console.log(stdout);
             exec(`cd ${projectPath}/${frontendName} && ng s -o`, (err, stdout, stderr) => {
                 if (err) {
                     console.error(stderr);

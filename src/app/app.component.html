@@ -48,7 +48,7 @@
         <div class="header-content">
           <h1><i class="fas fa-diagram-project"></i> Creación de Diagramas UML</h1>
           @if(proyectoSeleccionado){
-            <button class="btn-generar" [disabled]="isButtonDisabled">
+            <button class="btn-generar" [disabled]="isButtonDisabled" (click)="abrirModalGenerarCodigo()">
               <i class="fas fa-code"></i> Generar Código
             </button>
           }
@@ -107,5 +107,114 @@
         }
       </div>
     </main>
+  </div>
+</div>
+
+<!-- Modal para generar código -->
+<div class="modal-backdrop" *ngIf="mostrarModal" (click)="cerrarModal($event)"></div>
+<div class="modal" *ngIf="mostrarModal">
+  <div class="modal-header">
+    <h2>
+      <i class="fas fa-code"></i> 
+      {{ etapaModal === 1 ? 'Seleccionar Versiones' : 'Configurar Conexión' }}
+    </h2>
+    <button class="close-btn" (click)="cerrarModal($event)">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  
+  <!-- Etapa 1: Selección de versiones -->
+  <div class="modal-body" *ngIf="etapaModal === 1">
+    <p>Selecciona la versión de cada diagrama que deseas utilizar para generar el código:</p>
+    
+    <div class="diagrama-selector">
+      <div class="diagrama-item" *ngFor="let diagrama of tiposDiagrama">
+        <h3>{{ diagrama.nombre }}</h3>
+        <div class="select-container">
+          <select [(ngModel)]="diagramasSeleccionados[diagrama.tipo]" [disabled]="!tieneVersiones(diagrama.tipo)">
+            <option [value]="null" disabled selected>Seleccionar versión</option>
+            <option *ngFor="let version of obtenerVersionesPorTipo(diagrama.tipo); let i = index" 
+                    [value]="version.ID_V">Versión {{ i + 1 }}</option>
+          </select>
+          <span class="version-status" [class.error]="!tieneVersiones(diagrama.tipo)">
+            <i [class]="tieneVersiones(diagrama.tipo) ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+            {{ tieneVersiones(diagrama.tipo) ? 'Disponible' : 'No disponible' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Etapa 2: Configuración de conexión -->
+  <div class="modal-body" *ngIf="etapaModal === 2">
+    <p>Configura los parámetros de conexión para la generación de código:</p>
+    
+    <div class="conexion-config">
+      <div class="form-group">
+        <label for="dbHost">Host de la Base de datos:</label>
+        <input type="text" id="dbHost" [(ngModel)]="configConexion.host" placeholder="Ej: localhost" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="dbUser">Usuario de la Base de datos:</label>
+        <input type="text" id="dbUser" [(ngModel)]="configConexion.usuario" placeholder="Ej: root" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="dbPassword">Contraseña:</label>
+        <input type="password" id="dbPassword" [(ngModel)]="configConexion.password" placeholder="Contraseña">
+      </div>
+      
+      <div class="form-group">
+        <label for="dbName">Nombre de la Base de datos:</label>
+        <input type="text" id="dbName" [(ngModel)]="configConexion.nombreDB" placeholder="Ej: miproyecto_db" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="dbDialect">Tipo de Gestor de BD:</label>
+        <select id="dbDialect" [(ngModel)]="configConexion.dialecto" required>
+          <option value="" disabled selected>Seleccionar gestor</option>
+          <option value="mysql2">MySQL</option>
+          <option value="pg">PostgreSQL</option>
+          <option value="mssql">SQL Server</option>
+          <option value="mariadb">MariaDB</option>
+          <option value="sqlite3">SQLite</option>
+          <!-- <option value="oracle">Oracle</option> -->
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="dbPort">Puerto de la Base de datos:</label>
+        <input type="number" id="dbPort" [(ngModel)]="configConexion.puertoDB" placeholder="Ej: 3306" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="backendPort">Puerto del Backend:</label>
+        <input type="number" id="backendPort" [(ngModel)]="configConexion.puertoBackend" placeholder="Ej: 3000" required>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal-footer">
+    <button class="cancel-btn" (click)="cerrarModal($event)">
+      <i class="fas fa-times"></i> Cancelar
+    </button>
+    
+    <!-- Botones para la primera etapa -->
+    <button *ngIf="etapaModal === 1" class="next-btn" 
+            [disabled]="!puedeGenerarCodigo()" 
+            (click)="siguienteEtapa()">
+      <i class="fas fa-arrow-right"></i> Siguiente
+    </button>
+    
+    <!-- Botones para la segunda etapa -->
+    <button *ngIf="etapaModal === 2" class="back-btn" (click)="etapaAnterior()">
+      <i class="fas fa-arrow-left"></i> Anterior
+    </button>
+    <button *ngIf="etapaModal === 2" class="generate-btn" 
+            [disabled]="!formularioConexionValido()" 
+            (click)="generarCodigo()">
+      <i class="fas fa-code"></i> Generar
+    </button>
   </div>
 </div>
