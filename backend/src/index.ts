@@ -3,6 +3,7 @@ import express,{Request,Response}  from "express";
 import cors from "cors";
 import { router } from "./routes";
 import "./models"
+import {crearArchivosClase } from "./services/backendcreaservices";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,4 +24,7 @@ app.get("/", (req: Request, res: Response) => {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  // let  clase
+  // clase = { nombre: "alumnos", atributos: ["nombre", "apellido", "edad"] };
+  //crearArchivosClase(clase,"C:/proyectos/miProyecto/miBackend")
 });

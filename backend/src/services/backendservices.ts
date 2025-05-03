@@ -2,9 +2,11 @@ import { exec } from "child_process";
 import { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
+import { crearArchivosClase } from "./backendcreaservices";
 
 export const createProjectBackend = (req: Request, res: Response) => {
     const { projectName, backendName,puerto } = req.body;
+    const clases = req.body
     
     if (!projectName || !backendName) { 
          res.status(400).json({ message: "El nombre del proyecto y el backend son obligatorios." });
@@ -69,11 +71,17 @@ app.listen(PORT, () => {
             };
             fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
-            // Ejecutar el servidor automáticamente
-            exec(`cd ${projectPath} && code .`, (startErr, startStdout, startStderr) => {
-                res.json({ message: `Proyecto ${backendName} creado y ejecutándose en ${projectPath}` });
-                return;
-            });
+            // // Ejecutar el servidor automáticamente
+            // exec(`cd ${projectPath} && code .`, (startErr, startStdout, startStderr) => {
+            //     res.json({ message: `Proyecto ${backendName} creado y ejecutándose en ${projectPath}` });
+            //     return;
+            // });
+
+            //crear archivos por clases
+            // for (const clase of clases) {
+            //     crearArchivosClase(clase, projectPath);
+            // }
+            
         });
 
     } catch (error) {
