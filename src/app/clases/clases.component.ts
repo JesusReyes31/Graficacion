@@ -5,6 +5,19 @@ import * as go from 'gojs';
 import { ToastrService } from 'ngx-toastr';
 import { VersionesService } from '../services/versiones/versiones.service';
 
+interface RelationMapping {
+  fromKey: string;
+  fromClassName: string;
+  type: string;
+  multiplicity?: string;
+  availableSourceFields: any[];
+  selectedSourceField: string;
+  localFieldName: string;
+  mappedField?: string;
+  mappedSourceField?: string;
+  fieldMappingType: 'new' | 'existing'; 
+}
+
 @Component({
   selector: 'app-clases',
   templateUrl: './clases.component.html',
@@ -23,8 +36,7 @@ export class ClasesComponent implements AfterViewInit {
   @ViewChild('diagramDiv') diagramDiv!: ElementRef;
   @ViewChild('paletteDiv') paletteDiv!: ElementRef;
 
-  // Modal properties
-  node: go.Node | null = null; // Changed from GraphObject to Node
+  node: go.Node | null = null;
   isModalVisible = false;
   modalType = '';
   paramName = '';
@@ -43,9 +55,15 @@ export class ClasesComponent implements AfterViewInit {
   classAttributes: any[] = [];
   classMethods: any[] = [];
   selectedMultiplicity = '1..*';
+  
+  // Propiedades para secciones desplegables
   showAttributes = true;
   showMethods = true;
+  showRelations = true;  
   openMethods: boolean[] = [];
+  
+  // Propiedades para relaciones
+  linkedRelations: RelationMapping[] = [];  
   
   constructor(private toastr: ToastrService, private versionesService: VersionesService) {}
 
@@ -99,9 +117,9 @@ export class ClasesComponent implements AfterViewInit {
       contentAlignment:go.Spot.Center,
       model: new go.GraphLinksModel([
         { 
-          category: "classWithAttributesAndMethods", 
+          category: "class", 
           name: "Clase",
-          properties: [{ visibility: "-", name: "atributo", type: "tipo", default: null, scope: "instance" }],
+          properties: [{ visibility: "+", name: "atributo", type: "tipo", default: null, scope: "instance" }],
           methods: [{ visibility: "+", name: "metodo", parameters: [{ paramName: "par", paramType: "tipo" }], type: "tipo" }]
         },
       ])
@@ -201,7 +219,7 @@ export class ClasesComponent implements AfterViewInit {
       )
     );
 
-    return new go.Map<string, go.Node>().add("classWithAttributesAndMethods", classTemplate);
+    return new go.Map<string, go.Node>().add("class", classTemplate);
   }
 
   createGroupTemplates($: any): go.Map<string, go.Group> {
@@ -497,10 +515,168 @@ export class ClasesComponent implements AfterViewInit {
     this.classMethods = node.data.methods ? 
       JSON.parse(JSON.stringify(node.data.methods)) : [];
     
+    // Cargar relaciones
+    this.loadRelationships(node.data.key);
+    
     this.openMethods = new Array(this.classMethods.length).fill(false);
     this.showAttributes = true;
     this.showMethods = true;
+    this.showRelations = true;
     this.isModalVisible = true;
+  }
+
+  // Método para cargar relaciones
+  loadRelationships(nodeKey: string): void {
+    this.linkedRelations = [];
+    if (!this.diagram) return;
+    
+    const model = this.diagram.model as go.GraphLinksModel;
+    
+    // Buscar todos los enlaces donde este nodo es el destino (relaciones entrantes)
+    if (model && model.linkDataArray) {
+      model.linkDataArray.forEach((link: any) => {
+        if (link.to === nodeKey) {
+          const sourceNode = model.findNodeDataForKey(link.from);
+          if (sourceNode) {
+            // Filtrar campos ID y los ya mapeados
+            const availableFields = (sourceNode['properties'] || []).filter((prop: any) => {
+              return !this.isFieldMappedAsFK(prop.name, sourceNode['key']);
+            });
+            
+            // Buscar mapeos existentes para esta relación
+            const existingMapping = this.findExistingMapping(link.from, nodeKey);
+            
+            this.linkedRelations.push({
+              fromKey: link.from,
+              fromClassName: sourceNode['name'] || 'Clase',
+              type: link.category || 'association',
+              multiplicity: link.rightText,
+              availableSourceFields: availableFields,
+              selectedSourceField: '',
+              localFieldName: '',
+              fieldMappingType: 'new', // Por defecto, crear campo nuevo
+              ...(existingMapping ? {
+                mappedField: existingMapping.localField,
+                mappedSourceField: existingMapping.sourceField
+              } : {})
+            });
+          }
+        }
+      });
+    }
+  }
+  
+  // Verificar si un campo ya está mapeado como clave foránea
+  isFieldMappedAsFK(fieldName: string, sourceNodeKey: string): boolean {
+    return this.classAttributes.some(attr => 
+      attr.isForeignKey && 
+      attr.fromKey === sourceNodeKey &&
+      attr.fromField === fieldName
+    );
+  }
+  
+  // Buscar mapeos existentes
+  findExistingMapping(sourceKey: string, targetKey: string): {sourceField: string, localField: string} | null {
+    for (const attr of this.classAttributes) {
+      if (attr.isForeignKey && attr.fromKey === sourceKey) {
+        return {
+          sourceField: attr.fromField,
+          localField: attr.name
+        };
+      }
+    }
+    return null;
+  }
+  
+  // Verificar si un campo está mapeado en alguna relación
+  isFieldMappedInAnyRelation(fieldName: string, sourceKey: string): boolean {
+    return this.classAttributes.some(attr => 
+      attr.isForeignKey && 
+      attr.fromKey === sourceKey && 
+      attr.fromField === fieldName
+    );
+  }
+  
+  // Crear mapeo de campo
+  createFieldMapping(relation: RelationMapping): void {
+    if (!relation.selectedSourceField || !relation.localFieldName) {
+      this.toastr.error('Por favor seleccione un campo origen y destino');
+      return;
+    }
+    
+    // Buscar el campo origen para obtener su tipo
+    const model = this.diagram.model as go.GraphLinksModel;
+    const sourceNode = model.findNodeDataForKey(relation.fromKey);
+    if (!sourceNode) {
+      this.toastr.error('No se pudo encontrar la clase origen');
+      return;
+    }
+    
+    if (!sourceNode['properties']) {
+      this.toastr.error('La clase origen no tiene propiedades definidas');
+      return;
+    }
+    
+    const sourceField = sourceNode['properties'].find((p: any) => p.name === relation.selectedSourceField);
+    if (!sourceField) {
+      this.toastr.error('No se pudo encontrar el campo seleccionado');
+      return;
+    }
+    
+    // Si es un campo existente
+    if (relation.fieldMappingType === 'existing') {
+      const existingFieldIndex = this.classAttributes.findIndex(attr => attr.name === relation.localFieldName);
+      if (existingFieldIndex === -1) {
+        this.toastr.error('El campo seleccionado ya no existe');
+        return;
+      }
+      
+      // Actualizar el campo existente para coincidir con el campo origen
+      this.classAttributes[existingFieldIndex].type = sourceField.type; // Actualizar el tipo
+      this.classAttributes[existingFieldIndex].isForeignKey = true;
+      this.classAttributes[existingFieldIndex].fromKey = relation.fromKey;
+      this.classAttributes[existingFieldIndex].fromClass = relation.fromClassName;
+      this.classAttributes[existingFieldIndex].fromField = relation.selectedSourceField;
+      
+      // Informar al usuario que el tipo ha cambiado
+      this.toastr.info(`El tipo del campo ${relation.localFieldName} ha sido actualizado a ${sourceField.type}`);
+    }
+    // Si es un campo nuevo
+    else {
+      this.classAttributes.push({
+        name: relation.localFieldName,
+        type: sourceField.type,
+        visibility: "+", // Por convención
+        isForeignKey: true,
+        fromKey: relation.fromKey,
+        fromClass: relation.fromClassName,
+        fromField: relation.selectedSourceField
+      });
+    }
+    
+    // Actualizar el estado de la relación
+    relation.mappedField = relation.localFieldName;
+    relation.mappedSourceField = relation.selectedSourceField;
+    
+    // Eliminar el campo origen de los disponibles para evitar duplicados
+    relation.availableSourceFields = relation.availableSourceFields.filter(
+      field => field.name !== relation.selectedSourceField
+    );
+    
+    // Limpiar los campos de entrada
+    relation.selectedSourceField = '';
+    relation.localFieldName = '';
+    relation.fieldMappingType = 'new'; // Reset a valor por defecto
+    
+    this.toastr.success('Campo mapeado correctamente');
+  }
+
+  // Añadir este método para obtener campos compatibles
+  getCompatibleFields(relation: RelationMapping): any[] {
+    if (!relation.selectedSourceField) return [];
+    
+    // Devolver todos los campos que no son FK
+    return this.classAttributes.filter(attr => !attr.isForeignKey);
   }
 
   // Class attribute management
@@ -626,6 +802,17 @@ export class ClasesComponent implements AfterViewInit {
     this.closeModal();
   }
   
+  // Modificar toggleSection para incluir relaciones
+  toggleSection(section: string): void {
+    if (section === 'attributes') {
+      this.showAttributes = !this.showAttributes;
+    } else if (section === 'methods') {
+      this.showMethods = !this.showMethods;
+    } else if (section === 'relations') {
+      this.showRelations = !this.showRelations;
+    }
+  }
+  
   closeModal(): void {
     this.isModalVisible = false;
     this.attributeName = "";
@@ -638,8 +825,10 @@ export class ClasesComponent implements AfterViewInit {
     this.className = "";
     this.classAttributes = [];
     this.classMethods = [];
+    this.linkedRelations = [];
     this.showAttributes = true;
     this.showMethods = true;
+    this.showRelations = true;
     this.openMethods = [];
   }
 
@@ -651,14 +840,6 @@ export class ClasesComponent implements AfterViewInit {
     this.methodParams.splice(index, 1);
   }
 
-  toggleSection(section: string): void {
-    if (section === 'attributes') {
-      this.showAttributes = !this.showAttributes;
-    } else if (section === 'methods') {
-      this.showMethods = !this.showMethods;
-    }
-  }
-
   toggleMethod(index: number): void {
     if (this.openMethods.length <= index) {
       const newArr = new Array(index + 1).fill(false);
@@ -666,5 +847,69 @@ export class ClasesComponent implements AfterViewInit {
       this.openMethods = newArr;
     }
     this.openMethods[index] = !this.openMethods[index];
+  }
+
+  getRelationTypeName(type: string): string {
+    const typeNames: {[key: string]: string} = {
+      'association': 'Asociación',
+      'aggregation': 'Agregación',
+      'composition': 'Composición',
+      'generalization': 'Generalización',
+      'dependency': 'Dependencia',
+      'realization': 'Realización',
+      'reflexiveAssociation': 'Asociación Reflexiva'
+    };
+    return typeNames[type] || type;
+  }
+
+  removeFieldMapping(relation: RelationMapping): void {
+    if (!relation.mappedField) return;
+    
+    // Buscar el campo mapeado
+    const index = this.classAttributes.findIndex(attr => 
+      attr.fromKey === relation.fromKey && 
+      attr.name === relation.mappedField
+    );
+    
+    if (index !== -1) {
+      // Conservar el campo pero quitar propiedades de FK
+      this.classAttributes[index].isForeignKey = false;
+      delete this.classAttributes[index].fromKey;
+      delete this.classAttributes[index].fromClass;
+      delete this.classAttributes[index].fromField;
+      
+      // Resetear el estado de la relación pero conservar los datos de mapeo
+      // para referencia futura en la interfaz de usuario
+      const oldMappedField = relation.mappedField;
+      const oldSourceField = relation.mappedSourceField;
+      
+      relation.mappedField = undefined;
+      relation.mappedSourceField = undefined;
+      
+      // Volver a agregar el campo origen a los campos disponibles
+      if (oldSourceField) {
+        const model = this.diagram.model as go.GraphLinksModel;
+        const sourceNode = model.findNodeDataForKey(relation.fromKey);
+        if (sourceNode && sourceNode['properties']) {
+          // Buscar el campo en las propiedades de origen
+          const sourceField = sourceNode['properties'].find((p: any) => p.name === oldSourceField);
+          if (sourceField && !relation.availableSourceFields.some(f => f.name === oldSourceField)) {
+            // Añadir de nuevo a la lista de campos disponibles
+            relation.availableSourceFields.push(sourceField);
+          }
+        }
+      }
+      
+      this.toastr.success('Mapeo eliminado. Los campos se han conservado.');
+    } else {
+      this.toastr.warning('No se encontró el campo mapeado.');
+    }
+  }
+
+  getSourceFieldType(relation: RelationMapping): string {
+    if (!relation.selectedSourceField) return '';
+    
+    const sourceField = relation.availableSourceFields.find(f => f.name === relation.selectedSourceField);
+    return sourceField ? sourceField.type : '';
   }
 }

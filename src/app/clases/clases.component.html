@@ -111,131 +111,6 @@
     </button>
   </div>
 
-<!-- Modal para Atributo -->
-<div *ngIf="isModalVisible && modalType === 'attribute'" class="modal-overlay">
-  <div class="modal-content">
-    <h2>{{ isEditing ? 'Editar Atributo' : 'Agregar Atributo' }}</h2>
-    
-    <label for="attributeName">Nombre del Atributo:</label>
-    <input type="text" id="attributeName" [(ngModel)]="attributeName" />
-    <br>
-
-    <label for="attributeType">Tipo del Atributo:</label>
-    <select id="attributeType" [(ngModel)]="attributeType">
-      <option value="tipo">otro</option>
-      <option value="string">string</option>
-      <option value="number">number</option>
-      <option value="boolean">boolean</option>
-      <option value="char">char</option>
-      <option value="float">float</option>
-      <option value="double">double</option>
-      <option value="object">object</option>
-      <option value="Array">Array</option>
-      <option value="Map">Map</option>
-      <option value="Set">Set</option>
-      <option value="Date">Date</option>
-      <option value="any">any</option>
-      <option value="enum">enum</option>
-    </select>
-
-    <br>
-    
-    <label for="attributeVisibility">Visibilidad:</label>
-    <select id="attributeVisibility" [(ngModel)]="attributeVisibility">
-      <option value="+">Pública (+)</option>
-      <option value="-">Privada (-)</option>
-      <option value="#">Protegida (#)</option>
-      <option value=" ">Espacio ( )</option>
-    </select>
-
-    <div class="modal-actions">
-      <button (click)="closeModal()">Cancelar</button>
-      <button (click)="saveModalData()">Guardar</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal para Método -->
-<div *ngIf="isModalVisible && modalType === 'method'" class="modal-overlay">
-  <div class="modal-content">
-    <h2>{{ isEditing ? 'Editar Método' : 'Agregar Método' }}</h2>
-    
-    <!-- Nombre del Método -->
-    <label for="methodName">Nombre del Método:</label>
-    <input type="text" id="methodName" [(ngModel)]="methodName" />
-    
-    <br>
-
-    <!-- Tipo de Retorno -->
-    <label for="methodReturnType">Tipo de Retorno:</label>
-    <select id="methodReturnType" [(ngModel)]="methodReturnType">
-      <option value="tipo">otro</option>
-      <option value="void">void</option>
-      <option value="string">string</option>
-      <option value="number">number</option>
-      <option value="boolean">boolean</option>
-      <option value="char">char</option>
-      <option value="float">float</option>
-      <option value="double">double</option>
-      <option value="object">object</option>
-      <option value="Array">Array</option>
-      <option value="Map">Map</option>
-      <option value="Set">Set</option>
-      <option value="Date">Date</option>
-      <option value="any">any</option>
-      <option value="Promise">Promise</option>
-    </select>
-    
-    <br>
-
-    <!-- Visibilidad del Método -->
-    <label for="methodVisibility">Visibilidad del Método:</label>
-    <select id="methodVisibility" [(ngModel)]="methodVisibility">
-      <option value="+">Pública (+)</option>
-      <option value="-">Privada (-)</option>
-      <option value="#">Protegida (#)</option>
-      <option value=" ">Espacio ( )</option>
-    </select>
-
-    <br>
-
-    <!-- Lista de Parámetros -->
-    <h3>Parámetros</h3>
-    <div *ngFor="let param of methodParams; let i = index" class="param-row">
-      <input type="text" [(ngModel)]="param.paramName" placeholder="Nombre del Parámetro" />
-      <select [(ngModel)]="param.paramType">
-        <option value="tipo">otro</option>
-        <option value="string">string</option>
-        <option value="number">number</option>
-        <option value="boolean">boolean</option>
-        <option value="char">char</option>
-        <option value="float">float</option>
-        <option value="double">double</option>
-        <option value="object">object</option>
-        <option value="Array">Array</option>
-        <option value="Map">Map</option>
-        <option value="Set">Set</option>
-        <option value="Date">Date</option>
-        <option value="any">any</option>
-        <option value="enum">enum</option>
-      </select>
-      
-
-      <button (click)="removeParameter(i)">X</button>
-    </div>
-
-    <!-- Botón para agregar más parámetros -->
-    <button (click)="addParameter()">Agregar Parámetro</button>
-
-    <!-- Botones de acción -->
-    <div class="modal-actions">
-      <button (click)="closeModal()">Cancelar</button>
-      <button (click)="saveModalData()">Guardar</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal para edición de clase completa -->
 <div *ngIf="isModalVisible && modalType === 'class'" class="modal-overlay">
   <div class="modal-compact">
@@ -256,32 +131,133 @@
       
       <div class="section-content" [ngClass]="{'show': showAttributes}">
         <div *ngFor="let attr of classAttributes; let i = index" class="attribute-row">
-          <select [(ngModel)]="attr.visibility">
+          <select [(ngModel)]="attr.visibility" [disabled]="attr.isForeignKey">
             <option value="+">+ (Público)</option>
             <option value="-">- (Privado)</option>
             <option value="#"># (Protegido)</option>
             <option value=" "> (Default)</option>
           </select>
-          <input type="text" [(ngModel)]="attr.name" placeholder="Nombre">
-          <select [(ngModel)]="attr.type">
+          <input type="text" [(ngModel)]="attr.name" placeholder="Nombre" [disabled]="attr.isForeignKey" 
+                 [ngClass]="{'foreign-key': attr.isForeignKey}">
+          <select [(ngModel)]="attr.type" [disabled]="attr.isForeignKey">
             <option value="string">string</option>
-            <option value="number">number</option>
-            <option value="boolean">boolean</option>
-            <option value="char">char</option>
+            <option value="int">int</option>
             <option value="float">float</option>
             <option value="double">double</option>
-            <option value="object">object</option>
-            <option value="Array">Array</option>
-            <option value="Map">Map</option>
-            <option value="Set">Set</option>
-            <option value="Date">Date</option>
-            <option value="any">any</option>
-            <option value="enum">enum</option>
-            <option value="tipo">otro</option>
+            <option value="boolean">boolean</option>
+            <option value="date">datetime/timestamp</option>
+            <option value="dateonly">date (Sin hora)</option>
+            <option value="time">time</option>
           </select>
-          <button (click)="removeClassAttribute(i)" class="eliminar">×</button>
+          <button (click)="removeClassAttribute(i)" class="eliminar" [disabled]="attr.isForeignKey" 
+                  [title]="attr.isForeignKey ? 'Elimine la relación para quitar este campo' : 'Eliminar atributo'">×</button>
         </div>
         <button (click)="addClassAttribute()" class="agregar">Agregar Atributo</button>
+      </div>
+      
+      <!-- Nueva sección para relaciones -->
+      <div *ngIf="linkedRelations.length > 0" class="section-header" (click)="toggleSection('relations')">
+        <span class="section-title">Relaciones</span>
+        <span class="badge relation-badge">{{ linkedRelations.length }}</span>
+        <span class="toggle-icon">{{ showRelations ? '▼' : '►' }}</span>
+      </div>
+      
+      <div *ngIf="linkedRelations.length > 0" class="section-content" [ngClass]="{'show': showRelations}">
+        <div *ngFor="let relation of linkedRelations; let i = index" class="relation-item">
+          <div class="relation-header">
+            <div class="relation-info">
+              <span class="relation-type" [ngClass]="relation.type">
+                {{ getRelationTypeName(relation.type) }}
+              </span>
+              <span class="relation-source">desde <strong>{{ relation.fromClassName }}</strong></span>
+              <span class="relation-multiplicity" *ngIf="relation.multiplicity">
+                ({{ relation.multiplicity }})
+              </span>
+            </div>
+          </div>
+          
+          <div class="relation-content">
+            <!-- Si el campo ya está mapeado -->
+            <div *ngIf="relation.mappedField" class="mapped-field">
+              <div class="field-mapping">
+                <div class="source-field">
+                  <span class="field-label">Campo origen:</span>
+                  <span class="field-value">{{ relation.mappedSourceField }}</span>
+                </div>
+                <div class="arrow">→</div>
+                <div class="target-field">
+                  <span class="field-label">Campo local:</span>
+                  <span class="field-value">{{ relation.mappedField }}</span>
+                </div>
+              </div>
+              <button (click)="removeFieldMapping(relation)" class="btn-remove-mapping">
+                Eliminar mapeo
+              </button>
+            </div>
+            
+            <!-- Si no hay campo mapeado aún -->
+            <div *ngIf="!relation.mappedField" class="field-mapping-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Campo de {{ relation.fromClassName }}:</label>
+                  <select [(ngModel)]="relation.selectedSourceField" class="field-select">
+                    <option value="">-- Seleccionar campo --</option>
+                    <option *ngFor="let field of relation.availableSourceFields" 
+                            [value]="field.name" 
+                            [disabled]="isFieldMappedInAnyRelation(field.name, relation.fromKey)">
+                      {{ field.visibility }} {{ field.name }}: {{ field.type }}
+                    </option>
+                  </select>
+                </div>
+                
+                <div class="arrow-container">→</div>
+                
+                <div class="form-group">
+                  <label>Campo en esta clase:</label>
+                  <div class="target-field-options">
+                    <!-- Radio buttons para elegir entre nuevo campo o existente -->
+                    <div class="field-option">
+                      <input type="radio" [(ngModel)]="relation.fieldMappingType" value="new" id="newField{{i}}" name="fieldType{{i}}">
+                      <label for="newField{{i}}">Nuevo</label>
+                    </div>
+                    <div class="field-option">
+                      <input type="radio" [(ngModel)]="relation.fieldMappingType" value="existing" id="existingField{{i}}" name="fieldType{{i}}">
+                      <label for="existingField{{i}}">Existente</label>
+                    </div>
+                  </div>
+                  
+                  <!-- Campo nuevo -->
+                  <input *ngIf="relation.fieldMappingType === 'new'" 
+                         type="text" 
+                         [(ngModel)]="relation.localFieldName" 
+                         [placeholder]="relation.selectedSourceField || 'nombreCampo'" 
+                         [disabled]="!relation.selectedSourceField">
+                  
+                  <!-- Seleccionar campo existente -->
+                  <select *ngIf="relation.fieldMappingType === 'existing'" 
+                          [(ngModel)]="relation.localFieldName" 
+                          class="field-select"
+                          [disabled]="!relation.selectedSourceField">
+                    <option value="">-- Seleccionar campo existente --</option>
+                    <option *ngFor="let field of classAttributes" 
+                            [value]="field.name"
+                            [disabled]="field.isForeignKey">
+                      {{ field.visibility }} {{ field.name }}: {{ field.type }}
+                      <span *ngIf="field.type !== getSourceFieldType(relation)"> 
+                        (Tipo cambiará a {{ getSourceFieldType(relation) }})
+                      </span>
+                    </option>
+                  </select>
+                </div>
+              </div>
+              
+              <button (click)="createFieldMapping(relation)" class="btn-add-mapping"
+                      [disabled]="!relation.selectedSourceField || !relation.localFieldName">
+                Mapear campo
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       
       <!-- Sección de métodos con toggle -->
@@ -306,19 +282,10 @@
               <select [(ngModel)]="method.type" (click)="$event.stopPropagation()">
                 <option value="void">void</option>
                 <option value="string">string</option>
-                <option value="number">number</option>
-                <option value="boolean">boolean</option>
-                <option value="char">char</option>
+                <option value="int">int</option>
                 <option value="float">float</option>
                 <option value="double">double</option>
-                <option value="object">object</option>
-                <option value="Array">Array</option>
-                <option value="Map">Map</option>
-                <option value="Set">Set</option>
-                <option value="Date">Date</option>
-                <option value="any">any</option>
-                <option value="Promise">Promise</option>
-                <option value="tipo">otro</option>
+                <option value="boolean">boolean</option>
               </select>
             </div>
             <div class="method-actions">
@@ -334,19 +301,14 @@
               <input type="text" [(ngModel)]="param.paramName" placeholder="Nombre">
               <select [(ngModel)]="param.paramType">
                 <option value="string">string</option>
-                <option value="number">number</option>
-                <option value="boolean">boolean</option>
-                <option value="char">char</option>
+                <option value="int">int</option>
                 <option value="float">float</option>
                 <option value="double">double</option>
-                <option value="object">object</option>
-                <option value="Array">Array</option>
-                <option value="Map">Map</option>
-                <option value="Set">Set</option>
-                <option value="Date">Date</option>
+                <option value="boolean">boolean</option>
+                <option value="date">datetime/timestamp</option>
+                <option value="dateonly">date (Sin hora)</option>
+                <option value="time">time</option>
                 <option value="any">any</option>
-                <option value="enum">enum</option>
-                <option value="tipo">otro</option>
               </select>
               <button (click)="removeClassMethodParameter(i, j)" class="eliminar">×</button>
             </div>

@@ -9,7 +9,6 @@ const getVersiones = async (req: Request, res: Response) => {
             res.status(400).json({ error: "ID_Project parameter is required" });
             return;
         }
-        console.log("ID_V", id);
         const versiones = await Versiones.findAll({ where: { ID_Proyecto: parseInt(id) }, include: { model: Diagrama } });
         if (!versiones || versiones.length === 0) {
             res.status(201).json({ message: "No versions found for this project" });
@@ -25,7 +24,6 @@ const getVersiones = async (req: Request, res: Response) => {
 const postVersion = async (req: Request, res: Response) => {
     const { ID_Proyecto, ID_Tipo, json } = req.body;
     try {
-        console.log("ID_Proyecto", ID_Proyecto, "ID_Tipo", ID_Tipo, "json", json);
         if (!ID_Proyecto || !ID_Tipo || !json) {
             res.status(400).json({ error: "ID_Proyecto, ID_Tipo and json are required" });
             return;

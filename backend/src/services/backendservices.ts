@@ -26,9 +26,6 @@ export const createProjectBackend = (req: Request, res: Response) => {
                 res.status(500).json({ message: "Error creando el backend." });
                 return;
             }
-
-            console.log(stdout);
-
             // Crear archivo index.ts
             fs.writeFileSync(path.join(projectPath, "index.ts"), `
 import express, { Request, Response } from "express";
