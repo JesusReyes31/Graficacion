@@ -147,7 +147,33 @@
   
   <!-- Etapa 2: Configuración de conexión -->
   <div class="modal-body" *ngIf="etapaModal === 2">
-    <p>Configura los parámetros de conexión para la generación de código:</p>
+    <!-- Lista de credenciales disponibles -->
+    <div class="credenciales-list" *ngIf="credencialesDisponibles.length > 0">
+      <h3>Credenciales guardadas</h3>
+      <div class="credencial-item" *ngFor="let credencial of credencialesDisponibles"
+           [class.selected]="credencial.ID === credencialSeleccionada?.ID"
+           (click)="seleccionarCredencial(credencial)">
+        <div class="credencial-info">
+          <span class="credencial-name">{{credencial.NombreDB}}</span>
+          <span class="credencial-details">{{credencial.Usuario}} &#64; {{credencial.Host}}</span>
+        </div>
+        <div class="credencial-actions">
+          <button class="action-btn edit-btn" (click)="editarCredencial(credencial); $event.stopPropagation()">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="action-btn delete-btn" (click)="eliminarCredenciales(credencial.ID || 0); $event.stopPropagation()">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón para agregar nuevas credenciales -->
+    <button class="add-credencial-btn" (click)="mostrarNuevasCredenciales()" *ngIf="!mostrarFormCredenciales">
+      <i class="fas fa-plus"></i> Agregar nuevas credenciales
+    </button>
+
+    <p>{{mostrarFormCredenciales ? 'Ingresa los datos para las nuevas credenciales:' : 'Configura los parámetros de conexión:'}}</p>
     
     <div class="conexion-config">
       <div class="form-group">
@@ -192,6 +218,16 @@
         <label for="backendPort">Puerto del Backend:</label>
         <input type="number" id="backendPort" [(ngModel)]="configConexion.puertoBackend" placeholder="Ej: 3000" required>
       </div>
+
+      <!-- Botones de acción para el formulario -->
+      <div class="form-actions">
+        <button class="btn-secondary" (click)="cancelarEdicion()" *ngIf="mostrarFormCredenciales">
+          <i class="fas fa-times"></i> Cancelar
+        </button>
+        <button class="btn-primary" (click)="guardarCredenciales()" *ngIf="mostrarFormCredenciales" [disabled]="!formularioConexionValido()">
+          <i class="fas fa-save"></i> Guardar Credenciales
+        </button>
+      </div>
     </div>
   </div>
   
@@ -212,7 +248,7 @@
       <i class="fas fa-arrow-left"></i> Anterior
     </button>
     <button *ngIf="etapaModal === 2" class="generate-btn" 
-            [disabled]="!formularioConexionValido()" 
+            [disabled]="!credencialSeleccionada || mostrarFormCredenciales" 
             (click)="generarCodigo()">
       <i class="fas fa-code"></i> Generar
     </button>

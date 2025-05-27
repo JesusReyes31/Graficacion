@@ -9,6 +9,7 @@ import { ToastrService } from 'ngx-toastr';
 import { VersionesService } from './services/versiones/versiones.service';
 import { CompartidoService } from './services/compartido/compartido.service';
 import { GenerarService } from './services/generar/generar.service';
+import { CredencialesService, Credencial } from './services/credenciales/credenciales.service';
 
 @Component({
   selector: 'app-root',
@@ -58,7 +59,35 @@ export class AppComponent implements OnInit {
     puertoBackend: 3000
   };
 
-  constructor(private router:Router,private proyectosService:ProyectosService,private toastr:ToastrService,private versionesService:VersionesService,private compartido:CompartidoService, private generar:GenerarService){}
+  // Nuevas propiedades para credenciales
+  credencialesDisponibles: Credencial[] = [];
+  credencialSeleccionada: Credencial | null = null;
+  mostrarFormCredenciales: boolean = false;
+
+  constructor(
+    private router: Router,
+    private proyectosService: ProyectosService,
+    private toastr: ToastrService,
+    private versionesService: VersionesService,
+    private compartido: CompartidoService,
+    private generar: GenerarService,
+    private credencialesService: CredencialesService
+  ) {
+    // Cargar la configuración guardada al iniciar
+    this.cargarConfiguracionGuardada();
+  }
+
+  // Agregar estos nuevos métodos antes de ngOnInit
+  private cargarConfiguracionGuardada() {
+    const configGuardada = localStorage.getItem('ultimaConfigConexion');
+    if (configGuardada) {
+      this.configConexion = JSON.parse(configGuardada);
+    }
+  }
+
+  private guardarConfiguracion() {
+    localStorage.setItem('ultimaConfigConexion', JSON.stringify(this.configConexion));
+  }
 
   async ngOnInit(){
     await this.proyectosService.getProyectos().subscribe((data:any) => {
@@ -90,7 +119,7 @@ export class AppComponent implements OnInit {
   toggleSidebar() {
     this.sidebarVisible = !this.sidebarVisible;
   }
-  seleccionarProyecto(proyecto: string,id:number) {
+  seleccionarProyecto(proyecto: string, id: number) {
     this.versionesService.getVersiones(id).subscribe((data:any) => {
       if(data.message){
         this.compartido.setProyectoSeleccionado('');
@@ -102,9 +131,10 @@ export class AppComponent implements OnInit {
     this.isButtonDisabled = false;
     sessionStorage.setItem('ID_Proyecto',id.toString())
     sessionStorage.setItem('proyecto',proyecto)
-    this.showComponent = false; // Elimina el componente
+    this.showComponent = false;
+    this.cargarCredenciales(id); // Cargar las credenciales del proyecto
     setTimeout(() => {
-      this.showComponent = true; // Lo vuelve a crear después de un breve retraso
+      this.showComponent = true;
     }, 100);
   }
 
@@ -289,17 +319,19 @@ export class AppComponent implements OnInit {
   }
 
   generarCodigo() {
-    // Obtener el ID del proyecto actual
+    if (!this.credencialSeleccionada) {
+      this.toastr.error('Debes seleccionar una configuración de conexión', 'Error');
+      return;
+    }
+
     const idProyecto = Number(sessionStorage.getItem('ID_Proyecto'));
     
-    // Obtener los IDs de las versiones seleccionadas
     const idv_cu = Number(this.diagramasSeleccionados['1']) || 0;
     const idv_sec = Number(this.diagramasSeleccionados['2']) || 0;
     const idv_paq = Number(this.diagramasSeleccionados['3']) || 0;
     const idv_comp = Number(this.diagramasSeleccionados['4']) || 0;
     const idv_class = Number(this.diagramasSeleccionados['5']) || 0;
     
-    // Datos completos para enviar
     const datosGeneracion = {
       id: idProyecto,
       idv_cu,
@@ -310,7 +342,6 @@ export class AppComponent implements OnInit {
       conexion: this.configConexion
     };
 
-    // Llamar al servicio con los parámetros adecuados
     this.generar.generarCodigo(datosGeneracion).subscribe(
       (response: any) => {
         this.toastr.success(response.message, 'Éxito');
@@ -322,5 +353,171 @@ export class AppComponent implements OnInit {
         console.error('Error al generar código:', error);
       }
     );
+  }
+
+  // Método para seleccionar una credencial existente
+  seleccionarCredencial(credencial: Credencial) {
+    this.credencialSeleccionada = credencial;
+    this.configConexion = this.mapearCredencialAConfigConexion(credencial);
+    this.mostrarFormCredenciales = false;
+  }
+
+  // Método para mostrar el formulario de nuevas credenciales
+  mostrarNuevasCredenciales() {
+    this.credencialSeleccionada = null;
+    this.configConexion = {
+      host: 'localhost',
+      usuario: '',
+      password: '',
+      nombreDB: '',
+      dialecto: '',
+      puertoDB: 3306,
+      puertoBackend: 3000
+    };
+    this.mostrarFormCredenciales = true;
+  }
+
+  // Método para cargar las credenciales del proyecto
+  cargarCredenciales(idProyecto: number) {
+    this.credencialesService.getCredencialesByProject(idProyecto).subscribe(
+      (credenciales) => {
+        this.credencialesDisponibles = credenciales;
+        if (credenciales.length > 0) {
+          this.credencialSeleccionada = credenciales[0];
+          this.configConexion = this.mapearCredencialAConfigConexion(this.credencialSeleccionada);
+        }
+      },
+      (error) => {
+        this.toastr.error('Error al cargar las credenciales', 'Error');
+      }
+    );
+  }
+
+  // Método para mapear una credencial al formato de configConexion
+  mapearCredencialAConfigConexion(credencial: Credencial) {
+    return {
+      host: credencial.Host,
+      usuario: credencial.Usuario,
+      password: credencial.Password,
+      nombreDB: credencial.NombreDB,
+      dialecto: credencial.Dialecto,
+      puertoDB: parseInt(credencial.PuertoDB),
+      puertoBackend: parseInt(credencial.PuertoBackend)
+    };
+  }
+
+  // Método para mapear configConexion al formato de Credencial
+  mapearConfigConexionACredencial(): Credencial {
+    return {
+      ID_Proyecto: Number(sessionStorage.getItem('ID_Proyecto')),
+      Host: this.configConexion.host,
+      Usuario: this.configConexion.usuario,
+      Password: this.configConexion.password,
+      NombreDB: this.configConexion.nombreDB,
+      Dialecto: this.configConexion.dialecto,
+      PuertoDB: this.configConexion.puertoDB.toString(),
+      PuertoBackend: this.configConexion.puertoBackend.toString()
+    };
+  }
+
+  // Método para guardar credenciales
+  guardarCredenciales() {
+    if (this.credencialSeleccionada?.ID) {
+      // Actualizar credenciales existentes
+      this.actualizarCredenciales();
+    } else {
+      // Guardar nuevas credenciales
+      this.guardarNuevasCredenciales();
+    }
+  }
+
+  // Método para editar una credencial existente
+  editarCredencial(credencial: Credencial) {
+    this.credencialSeleccionada = credencial;
+    this.configConexion = this.mapearCredencialAConfigConexion(credencial);
+    this.mostrarFormCredenciales = true;
+  }
+
+  // Método para cancelar la edición
+  cancelarEdicion() {
+    if (this.credencialSeleccionada?.ID) {
+      // Si estábamos editando, restaurar los valores originales
+      this.configConexion = this.mapearCredencialAConfigConexion(this.credencialSeleccionada);
+    } else {
+      // Si era una nueva credencial, limpiar el formulario
+      this.configConexion = {
+        host: 'localhost',
+        usuario: '',
+        password: '',
+        nombreDB: '',
+        dialecto: '',
+        puertoDB: 3306,
+        puertoBackend: 3000
+      };
+    }
+    this.mostrarFormCredenciales = false;
+  }
+
+  // Modificar el método guardarNuevasCredenciales
+  private guardarNuevasCredenciales() {
+    const nuevaCredencial = this.mapearConfigConexionACredencial();
+    this.credencialesService.createCredencial(nuevaCredencial).subscribe(
+      (credencial) => {
+        this.credencialesDisponibles.push(credencial);
+        this.credencialSeleccionada = credencial;
+        this.toastr.success('Credenciales guardadas correctamente', 'Éxito');
+        this.mostrarFormCredenciales = false;
+      },
+      (error) => {
+        this.toastr.error('Error al guardar las credenciales', 'Error');
+      }
+    );
+  }
+
+  // Modificar el método actualizarCredenciales
+  private actualizarCredenciales() {
+    if (!this.credencialSeleccionada?.ID) return;
+    
+    const credencialActualizada = this.mapearConfigConexionACredencial();
+    this.credencialesService.updateCredencial(this.credencialSeleccionada.ID, credencialActualizada).subscribe(
+      () => {
+        this.toastr.success('Credenciales actualizadas correctamente', 'Éxito');
+        this.cargarCredenciales(credencialActualizada.ID_Proyecto);
+        this.mostrarFormCredenciales = false;
+      },
+      (error) => {
+        this.toastr.error('Error al actualizar las credenciales', 'Error');
+      }
+    );
+  }
+
+  // Método para eliminar credenciales
+  eliminarCredenciales(id: number) {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'No podrás revertir esta acción',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.credencialesService.deleteCredencial(id).subscribe(
+          () => {
+            this.credencialesDisponibles = this.credencialesDisponibles.filter(c => c.ID !== id);
+            if (this.credencialSeleccionada?.ID === id) {
+              this.credencialSeleccionada = this.credencialesDisponibles[0] || null;
+              if (this.credencialSeleccionada) {
+                this.configConexion = this.mapearCredencialAConfigConexion(this.credencialSeleccionada);
+              }
+            }
+            this.toastr.success('Credenciales eliminadas correctamente', 'Éxito');
+          },
+          (error) => {
+            this.toastr.error('Error al eliminar las credenciales', 'Error');
+          }
+        );
+      }
+    });
   }
 }
