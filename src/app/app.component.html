@@ -147,85 +147,93 @@
   
   <!-- Etapa 2: Configuración de conexión -->
   <div class="modal-body" *ngIf="etapaModal === 2">
-    <!-- Lista de credenciales disponibles -->
-    <div class="credenciales-list" *ngIf="credencialesDisponibles.length > 0">
-      <h3>Credenciales guardadas</h3>
-      <div class="credencial-item" *ngFor="let credencial of credencialesDisponibles"
-           [class.selected]="credencial.ID === credencialSeleccionada?.ID"
-           (click)="seleccionarCredencial(credencial)">
-        <div class="credencial-info">
-          <span class="credencial-name">{{credencial.NombreDB}}</span>
-          <span class="credencial-details">{{credencial.Usuario}} &#64; {{credencial.Host}}</span>
+    <div class="credenciales-section">
+      <!-- Título de sección -->
+      <h3 class="section-title">
+        <i class="fas fa-database"></i>
+        Configuraciones de conexión
+      </h3>
+      
+      <!-- Vista de selección de credenciales (solo visible cuando no se está editando) -->
+      <div *ngIf="!mostrarFormCredenciales">
+        <!-- Lista de credenciales disponibles -->
+        <div class="credenciales-list" *ngIf="credencialesDisponibles.length > 0">
+          <div class="credencial-item" 
+               *ngFor="let credencial of credencialesDisponibles"
+               [class.selected]="credencial.ID === credencialSeleccionada?.ID"
+               (click)="seleccionarCredencial(credencial)">
+            <div class="credencial-info">
+              <span class="credencial-name">{{credencial.NombreDB}}</span>
+              <span class="credencial-details">{{credencial.Usuario}} &#64; {{credencial.Host}}</span>
+            </div>
+            <div class="credencial-actions">
+              <button class="action-btn edit-btn" title="Editar configuración" (click)="editarCredencial(credencial); $event.stopPropagation()">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delete-btn" title="Eliminar configuración" (click)="eliminarCredenciales(credencial.ID || 0); $event.stopPropagation()">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="credencial-actions">
-          <button class="action-btn edit-btn" (click)="editarCredencial(credencial); $event.stopPropagation()">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button class="action-btn delete-btn" (click)="eliminarCredenciales(credencial.ID || 0); $event.stopPropagation()">
-            <i class="fas fa-trash"></i>
+
+        <!-- Mensaje cuando no hay credenciales -->
+        <div class="no-credenciales" *ngIf="credencialesDisponibles.length === 0">
+          <i class="fas fa-info-circle"></i>
+          <p>No hay configuraciones guardadas. Agrega una nueva configuración para continuar.</p>
+        </div>
+
+        <!-- Botón para agregar nuevas credenciales -->
+        <button class="add-credencial-btn" (click)="mostrarNuevasCredenciales()">
+          <i class="fas fa-plus"></i> Agregar nueva configuración
+        </button>
+      </div>
+
+      <!-- Formulario para configurar nueva conexión (solo se muestra al agregar/editar) -->
+      <div class="conexion-form" *ngIf="mostrarFormCredenciales">
+        <div class="form-header">
+          <h4>{{ credencialSeleccionada?.ID ? 'Editar' : 'Nueva' }} configuración</h4>
+          <button class="form-close" (click)="cancelarEdicion()">
+            <i class="fas fa-times"></i>
           </button>
         </div>
-      </div>
-    </div>
+        
+        <div class="conexion-config">
+          <div class="form-group">
+            <label for="dbHost">Host de la Base de datos:</label>
+            <input type="text" id="dbHost" [(ngModel)]="configConexion.host" placeholder="Ej: localhost" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="dbUser">Usuario de la Base de datos:</label>
+            <input type="text" id="dbUser" [(ngModel)]="configConexion.usuario" placeholder="Ej: root" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="dbPassword">Contraseña:</label>
+            <input type="password" id="dbPassword" [(ngModel)]="configConexion.password" placeholder="Contraseña">
+          </div>
+          
+          <div class="form-group">
+            <label for="dbName">Nombre de la Base de datos:</label>
+            <input type="text" id="dbName" [(ngModel)]="configConexion.nombreDB" placeholder="Ej: miproyecto_db" required>
+          </div>
+          
+          <!-- Puerto del Backend sigue visible -->
+          <div class="form-group">
+            <label for="backendPort">Puerto del Backend:</label>
+            <input type="number" id="backendPort" [(ngModel)]="configConexion.puertoBackend" placeholder="Ej: 3000" required>
+          </div>
 
-    <!-- Botón para agregar nuevas credenciales -->
-    <button class="add-credencial-btn" (click)="mostrarNuevasCredenciales()" *ngIf="!mostrarFormCredenciales">
-      <i class="fas fa-plus"></i> Agregar nuevas credenciales
-    </button>
-
-    <p>{{mostrarFormCredenciales ? 'Ingresa los datos para las nuevas credenciales:' : 'Configura los parámetros de conexión:'}}</p>
-    
-    <div class="conexion-config">
-      <div class="form-group">
-        <label for="dbHost">Host de la Base de datos:</label>
-        <input type="text" id="dbHost" [(ngModel)]="configConexion.host" placeholder="Ej: localhost" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="dbUser">Usuario de la Base de datos:</label>
-        <input type="text" id="dbUser" [(ngModel)]="configConexion.usuario" placeholder="Ej: root" required>
-      </div>
-      
-      <div class="form-group">
-        <label for="dbPassword">Contraseña:</label>
-        <input type="password" id="dbPassword" [(ngModel)]="configConexion.password" placeholder="Contraseña">
-      </div>
-      
-      <div class="form-group">
-        <label for="dbName">Nombre de la Base de datos:</label>
-        <input type="text" id="dbName" [(ngModel)]="configConexion.nombreDB" placeholder="Ej: miproyecto_db" required>
-      </div>
-      
-      <!-- <div class="form-group">
-        <label for="dbDialect">Tipo de Gestor de BD:</label>
-        <select id="dbDialect" [(ngModel)]="configConexion.dialecto" required>
-          <option value="" disabled selected>Seleccionar gestor</option>
-          <option value="mysql2">MySQL</option>
-          <option value="pg">PostgreSQL</option>
-          <option value="mssql">SQL Server</option>
-          <option value="mariadb">MariaDB</option>
-          <option value="sqlite3">SQLite</option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label for="dbPort">Puerto de la Base de datos:</label>
-        <input type="number" id="dbPort" [(ngModel)]="configConexion.puertoDB" placeholder="Ej: 3306" required>
-      </div> -->
-      
-      <div class="form-group">
-        <label for="backendPort">Puerto del Backend:</label>
-        <input type="number" id="backendPort" [(ngModel)]="configConexion.puertoBackend" placeholder="Ej: 3000" required>
-      </div>
-
-      <!-- Botones de acción para el formulario -->
-      <div class="form-actions">
-        <button class="btn-secondary" (click)="cancelarEdicion()" *ngIf="mostrarFormCredenciales">
-          <i class="fas fa-times"></i> Cancelar
-        </button>
-        <button class="btn-primary" (click)="guardarCredenciales()" *ngIf="mostrarFormCredenciales" [disabled]="!formularioConexionValido()">
-          <i class="fas fa-save"></i> Guardar Credenciales
-        </button>
+          <div class="form-actions">
+            <button class="btn-secondary" (click)="cancelarEdicion()">
+              <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button class="btn-primary" (click)="guardarCredenciales()" [disabled]="!formularioConexionValido()">
+              <i class="fas fa-save"></i> Guardar
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

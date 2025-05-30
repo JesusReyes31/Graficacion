@@ -234,6 +234,7 @@ export class AppComponent implements OnInit {
         this.mostrarModal = true;
         this.etapaModal = 1; // Iniciar en la primera etapa
       });
+      this.cargarCredenciales(idProyecto); // Cargar las credenciales del proyecto
     } else {
       this.toastr.error('No se pudo obtener el ID del proyecto', 'Error');
     }
@@ -278,7 +279,7 @@ export class AppComponent implements OnInit {
       usuario: '',
       password: '',
       nombreDB: '',
-      dialecto: '',
+      dialecto: 'mysql2',
       puertoDB: 3306,
       puertoBackend: 3000
     };
@@ -322,13 +323,10 @@ export class AppComponent implements OnInit {
   }
 
   formularioConexionValido(): boolean {
-    // Validación básica del formulario de configuración
     return !!(
       this.configConexion.host && 
       this.configConexion.usuario && 
       this.configConexion.nombreDB && 
-      this.configConexion.dialecto && 
-      this.configConexion.puertoDB && 
       this.configConexion.puertoBackend
     );
   }
@@ -338,7 +336,8 @@ export class AppComponent implements OnInit {
       this.toastr.error('Debes seleccionar una configuración de conexión', 'Error');
       return;
     }
-
+    this.configConexion.dialecto = 'mysql2'; 
+    console.log('Generando código con la configuración:', this.configConexion);
     const idProyecto = Number(sessionStorage.getItem('ID_Proyecto'));
     
     const idv_cu = Number(this.diagramasSeleccionados['1']) || 0;
