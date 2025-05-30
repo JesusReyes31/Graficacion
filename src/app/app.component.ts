@@ -10,11 +10,12 @@ import { VersionesService } from './services/versiones/versiones.service';
 import { CompartidoService } from './services/compartido/compartido.service';
 import { GenerarService } from './services/generar/generar.service';
 import { CredencialesService, Credencial } from './services/credenciales/credenciales.service';
+import { SpinnerComponent } from './components/spinner/spinner.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet,RouterLink,RouterModule], 
+  imports: [CommonModule, FormsModule, RouterOutlet,RouterLink,RouterModule, SpinnerComponent], 
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -54,7 +55,7 @@ export class AppComponent implements OnInit {
     usuario: '',
     password: '',
     nombreDB: '',
-    dialecto: '',
+    dialecto: 'mysql2',
     puertoDB: 3306,
     puertoBackend: 3000
   };
@@ -238,13 +239,27 @@ export class AppComponent implements OnInit {
     }
   }
 
+  // Método específico para cerrar el modal desde el botón de cerrar
+  cerrarModalDirecto() {
+    this.mostrarModal = false;
+    this.reiniciarEstadoModal();
+  }
+
   cerrarModal(event: Event) {
     event.stopPropagation();
-    if (
-      (event.target as HTMLElement).classList.contains('modal-backdrop') ||
-      (event.target as HTMLElement).classList.contains('close-btn') ||
-      (event.target as HTMLElement).classList.contains('cancel-btn')
-    ) {
+    
+    // Obtener el elemento clickeado
+    const target = event.target as HTMLElement;
+    
+    // Verificar si el clic fue en el backdrop, botón de cerrar o sus elementos hijos
+    const shouldClose = 
+      target.classList.contains('modal-backdrop') ||
+      target.classList.contains('close-btn') ||
+      target.classList.contains('cancel-btn') ||
+      target.closest('.close-btn') ||
+      target.closest('.cancel-btn');
+    
+    if (shouldClose) {
       this.mostrarModal = false;
       this.reiniciarEstadoModal();
     }
