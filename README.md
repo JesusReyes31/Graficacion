@@ -1,59 +1,86 @@
-# Menu
+# 📊 Sistema de Diagramación UML
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.6.
+Este proyecto permite la generación de proyectos de manera automática (Frontend y Backend), a partir de la creaci+on y edición de diagramas UML
 
-## Development server
+---
+## 📁 Repositorios
 
-To start a local development server, run:
+- 🌐 Frontend: [Graficacion](https://github.com/JesusReyes31/Graficacion)
+- 🔧 Backend: [grafbackend](https://github.com/ValdezErnes/grafbackend)
 
-```bash
-ng serve
-```
+----
+## 🚀 Cómo usar este sistema
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### 1. **Clona los repositorios:**
 
 ```bash
-ng generate component component-name
+git clone https://github.com/JesusReyes31/Graficacion
+git clone https://github.com/ValdezErnes/grafbackend
+
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+### 2. **Accede a la carpeta del proyecto e instala dependencias:**
+#### 2.1 Frontend
 ```bash
-ng generate --help
+cd Graficacion
+npm install --force
 ```
-
-## Building
-
-To build the project run:
-
+#### 2.2 Backend
 ```bash
-ng build
+cd ../grafbackend
+npm install --force
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### 3. **Configura Variables de entorno (en grafbackend):**
+Dentro del proyecto grafbackend, crea un archivo .env y agrega lo siguiente:
 
-## Running unit tests
+```bash 
+PORT=Puerto_Backend
+DB_HOST=Host_DB
+DB_USER=Usuario_DB
+DB_PASSWORD=Contraseña_DB
+DB_NAME=NombreBD
+DB_PORT=Puerto_DB
+```
+Sustituye los valores por los datos reales de tu base de datos y servidor.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
+### 4. **Ejecuta ambos proyectos:**
+#### 4.1 Graficacion:
 ```bash
-ng test
+cd Graficacion
+ng serve -o
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
+#### 4.2 Backend (grafbackend):
 ```bash
-ng e2e
+cd grafbackend
+npm run dev
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### 🧪 Ejemplo de uso
 
-## Additional Resources
+1. **Crear proyecto** (si no existe ninguno).
+2. **Seleccionar el proyecto**. Se mostrarán los diagramas UML que se pueden hacer, al dar clic en cada uno se creará una versión automáticamente en la BD. Puedes crear nuevas versiones con el botón **"Nueva Versión"**.
+3. **Editar los diagramas UML**. Entra a cada uno, edítalo, y haz clic en **Guardar** cuando termines:
+    - **3.1 Diagrama de Casos de Uso**: Arrastra actores y casos de uso (dentro del área de sistema).
+   - **3.2 Diagrama de Secuencias**: Añade líneas y acciones (pueden conectarse).
+   - **3.3 Diagrama de Paquetes**: Añade paquetes y nodos.
+   - **3.4 Diagrama de Componentes**: Añade componentes e interfaces (Requerida y Ofrecida).
+   - **3.5 Diagrama de Clases**: Añade clases, relaciones, atributos y métodos. Usa el ícono de lápiz para editar atributos/métodos.
+        - **Relaciones entre clases**: Se deben seleccionar las 2 clases que se quieren unir (primero la Clase padre y luego la clase hija).
+            - Generan un nuevo espacio en la edición de la clase llamado Relaciones donde podrás vincular campos.
+            - En el espacio que se agrega, selecciona un campo de la clase padre en el select, luego:
+                - Si el campo de la clase hija **no existe**, se te pedirá nombrarlo.
+                - Si **ya existe** en la clase hija, selecciónalo en el desplegable.
+                - Haz clic en **"Mapear campo"** para completar la relación.
+4. Una vez editados todos los diagramas, haz clic en **Generar Código** (parte superior derecha).
+5. Selecciona las versiones de los diagramas y da clic en **Siguiente**.
+6. **Agregar credenciales de conexión** para el proyecto (Host, Usuario, Contraseña, Nombre de la BD, Puerto).
+   - Si se crea una nueva, al guardar aparecerá seleccionada automáticamente.
+7. Haz clic en **Generar** y espera a que se instale todo.
+8. Una vez finalizado y con éxito, encontrarás el proyecto generado en:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+   ```
+   C:\Users\[TuNombreDeUsuario]\Proyectos\Nombre_Proyecto
+   ```
+      
